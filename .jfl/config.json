@@ -1,10 +1,10 @@
 {
-  "name": "",
-  "type": "gtm",
+  "name": "jfl-template",
+  "type": "service",
   "setup": "",
   "product_repo": "",
   "product_path": "product/",
-  "description": "",
+  "description": "JFL Template - starter template repo for new JFL projects",
   "team": {
     "owner": {
       "name": "",
@@ -17,5 +17,24 @@
   "crm": {
     "type": "",
     "config": {}
+  },
+  "service_type": "library",
+  "gtm_parent": "/Users/alectaggart/CascadeProjects/JFL-GTM",
+  "working_branch": "main",
+  "sync_to_parent": {
+    "journal": true,
+    "knowledge": false,
+    "content": false
+  },
+  "environments": {
+    "development": {
+      "code_path": "/Users/alectaggart/CascadeProjects/jfl-template",
+      "start_command": "echo 'No start command configured'",
+      "port": null,
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "health_check": null
+    }
   }
 }
