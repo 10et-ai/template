@@ -36,5 +36,17 @@
       },
       "health_check": null
     }
+  },
+  "context_scope": {
+    "produces": [
+      "template:schema-change",
+      "template:config-change"
+    ],
+    "consumes": [
+      "cli:api-change",
+      "cli:template-api",
+      "cli:command-change"
+    ],
+    "denied": []
   }
 }
