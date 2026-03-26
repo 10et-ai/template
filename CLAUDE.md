@@ -32,7 +32,7 @@ Vision emerges from doing, not declaring. Start immediately. Capture context int
 
 Never ask the user to use tool names. Detect intent and invoke silently.
 
-**Verify session branch** — hook output shows `session-*`. If git shows `main`, the hook may not have run. The `jfl-platform` symlink in `product/` breaks silently if jfl-platform is out of sync — always run the sync script.
+**Verify session branch** — hook output shows `session-*`. If git shows `main`, the hook may not have run.
 
 ---
 
@@ -92,20 +92,20 @@ When a decision is made:
 
 ## Core Architecture
 
-**GTM workspace ≠ product code.** This repo is the context layer. Product code lives in separate repos:
+**GTM workspace ≠ product code.** This repo is the context layer. Product code lives in separate repos, registered as **services**:
 
 ```
-jfl-gtm/          ← this repo (GTM context, sessions, knowledge)
-  product/        ← symlink → jfl-platform OR submodule
+my-project-gtm/   ← this repo (GTM context, sessions, knowledge)
   knowledge/      ← strategy, vision, brand
   content/        ← marketing
-  .jfl/           ← journal, memory, config, sessions
-
-jfl-cli/          ← CLI product (separate repo)
-jfl-platform/     ← platform product (separate repo)
+  .jfl/           ← journal, memory, config, services
+  .claude/agents/ ← service agent definitions
+  .claude/skills/ ← service skill wrappers
 ```
 
-`jfl update` updates GTM toolkit (CLAUDE.md, skills/) without touching product repos.
+Product repos are registered via `jfl onboard <path|url>` and accessed through service agents (`@service-name`). No submodules or symlinks.
+
+`jfl update` updates GTM toolkit (CLAUDE.md, skills/) without touching service repos.
 
 ---
 
