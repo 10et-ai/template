@@ -32,15 +32,15 @@ echo -e "Directory: ${GREEN}$CWD${NC}"
 # Detect which repo context (check for submodules first, then GTM)
 REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
 
-if [[ "$CWD" == *"/product"* ]] || [[ "$REMOTE_URL" == *"jfl-platform"* ]]; then
-    echo -e "Context:   ${YELLOW}product submodule${NC} (jfl-platform)"
+if [[ "$CWD" == *"/product"* ]] || [[ "$REMOTE_URL" == *"tenet-platform"* ]]; then
+    echo -e "Context:   ${YELLOW}product submodule${NC} (tenet-platform)"
     echo ""
     echo "To commit here: ./scripts/commit-product.sh \"message\""
-elif [[ "$CWD" == *"/runner"* ]] || [[ "$REMOTE_URL" == *"jfl-runner"* ]]; then
-    echo -e "Context:   ${YELLOW}runner submodule${NC} (jfl-runner)"
+elif [[ "$CWD" == *"/runner"* ]] || [[ "$REMOTE_URL" == *"tenet-runner"* ]]; then
+    echo -e "Context:   ${YELLOW}runner submodule${NC} (tenet-runner)"
     echo ""
     echo "To commit here: cd ../; git add runner && git commit -m \"Update runner submodule\""
-elif [[ "$REMOTE_URL" == *"JFL-GTM"* ]] || [[ -f ".jfl/config.json" ]]; then
+elif [[ "$REMOTE_URL" == *"JFL-GTM"* ]] || [[ -f ".tenet/config.json" ]]; then
     echo -e "Context:   ${GREEN}GTM repo${NC} (main project)"
     echo ""
     echo "To commit here: ./scripts/commit-gtm.sh \"message\""

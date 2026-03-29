@@ -30,11 +30,11 @@ jobs:
         run: |
           # Read project config
           PROJECT_NAME=$(node -e "
-            try { console.log(JSON.parse(require('fs').readFileSync('.jfl/config.json','utf8')).name || 'unknown'); }
+            try { console.log(JSON.parse(require('fs').readFileSync('.tenet/config.json','utf8')).name || 'unknown'); }
             catch(e) { console.log('unknown'); }
           ")
           PROJECT_DESC=$(node -e "
-            try { console.log(JSON.parse(require('fs').readFileSync('.jfl/config.json','utf8')).description || ''); }
+            try { console.log(JSON.parse(require('fs').readFileSync('.tenet/config.json','utf8')).description || ''); }
             catch(e) { console.log(''); }
           ")
           echo "project_name=$PROJECT_NAME" >> $GITHUB_OUTPUT
@@ -69,7 +69,7 @@ jobs:
             // Recent journal entries (last 5 for active context)
             try {
               const { execSync } = require('child_process');
-              const journal = execSync('cat .jfl/journal/*.jsonl 2>/dev/null | tail -5', { encoding: 'utf8' });
+              const journal = execSync('cat .tenet/journal/*.jsonl 2>/dev/null | tail -5', { encoding: 'utf8' });
               if (journal.trim()) {
                 sections.push('## Recent Activity');
                 sections.push(journal.trim());
@@ -80,7 +80,7 @@ jobs:
             // Recent decisions
             try {
               const { execSync } = require('child_process');
-              const decisions = execSync('cat .jfl/journal/*.jsonl 2>/dev/null | grep decision | tail -3', { encoding: 'utf8' });
+              const decisions = execSync('cat .tenet/journal/*.jsonl 2>/dev/null | grep decision | tail -3', { encoding: 'utf8' });
               if (decisions.trim()) {
                 sections.push('## Recent Decisions');
                 sections.push(decisions.trim());
@@ -270,7 +270,7 @@ jobs:
             const stats = fs.readFileSync('/tmp/stats.txt', 'utf8');
             const findings = JSON.parse(fs.readFileSync('/tmp/findings.json', 'utf8'));
             const projectName = '${{ steps.context.outputs.project_name }}';
-            const marker = '<!-- jfl-ai-review -->';
+            const marker = '<!-- tenet-ai-review -->';
 
             const body = [
               marker,
@@ -333,8 +333,8 @@ jobs:
         if: always()
         continue-on-error: true
         env:
-          JFL_HUB_URL: ${{ secrets.JFL_HUB_URL }}
-          JFL_HUB_TOKEN: ${{ secrets.JFL_HUB_TOKEN }}
+          TENET_HUB_URL: ${{ secrets.TENET_HUB_URL }}
+          TENET_HUB_TOKEN: ${{ secrets.TENET_HUB_TOKEN }}
         run: |
           # Build structured event with findings
           node -e "
@@ -363,9 +363,9 @@ jobs:
             fs.writeFileSync('/tmp/review-event.json', JSON.stringify(event));
           "
 
-          if [ -n "$JFL_HUB_URL" ]; then
-            curl -s -X POST "$JFL_HUB_URL/api/events" \
+          if [ -n "$TENET_HUB_URL" ]; then
+            curl -s -X POST "$TENET_HUB_URL/api/events" \
               -H "Content-Type: application/json" \
-              -H "Authorization: Bearer $JFL_HUB_TOKEN" \
+              -H "Authorization: Bearer $TENET_HUB_TOKEN" \
               -d @/tmp/review-event.json || echo "Hub not available"
           fi

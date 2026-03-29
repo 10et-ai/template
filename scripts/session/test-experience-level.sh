@@ -161,7 +161,7 @@ test_unmerged_work_safety() {
     echo ""
 
     # Check that doctor separates merged vs unmerged
-    if grep -q "⚠️  UNMERGED (do NOT delete)" "$SCRIPT_DIR/jfl-doctor.sh"; then
+    if grep -q "⚠️  UNMERGED (do NOT delete)" "$SCRIPT_DIR/tenet-doctor.sh"; then
         pass "Doctor clearly labels unmerged branches"
     else
         fail "Doctor doesn't distinguish merged vs unmerged"
@@ -169,7 +169,7 @@ test_unmerged_work_safety() {
 
     # Check that --fix never deletes unmerged (check code, not output)
     # The key is: only $merged_list is deleted, never $unmerged_list
-    if grep -A20 "if \[\[ \$unmerged_orphans -gt 0 \]\]" "$SCRIPT_DIR/jfl-doctor.sh" | \
+    if grep -A20 "if \[\[ \$unmerged_orphans -gt 0 \]\]" "$SCRIPT_DIR/tenet-doctor.sh" | \
        grep -q "UNMERGED.*do NOT delete"; then
         pass "--fix mode labels unmerged branches correctly"
     else
@@ -177,7 +177,7 @@ test_unmerged_work_safety() {
     fi
 
     # Check that only merged branches are deleted
-    if grep -B5 "git branch -D" "$SCRIPT_DIR/jfl-doctor.sh" | grep -q "merged_orphans -gt 0"; then
+    if grep -B5 "git branch -D" "$SCRIPT_DIR/tenet-doctor.sh" | grep -q "merged_orphans -gt 0"; then
         pass "Only deletes branches that are fully merged"
     else
         fail "Deletion logic might be unsafe"

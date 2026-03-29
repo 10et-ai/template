@@ -87,9 +87,9 @@ else
     fail "Doesn't abort on conflicts - WILL LOSE CONFLICTING CHANGES"
 fi
 
-print_test "SAFETY: Script uses auto-resolve strategy for .jfl/ conflicts"
+print_test "SAFETY: Script uses auto-resolve strategy for .tenet/ conflicts"
 if grep -q -- "-X ours" "$SCRIPT_DIR/session-cleanup.sh"; then
-    pass "Uses -X ours for auto-resolving .jfl/ conflicts"
+    pass "Uses -X ours for auto-resolving .tenet/ conflicts"
 else
     fail "Missing conflict resolution strategy - merges will fail unnecessarily"
 fi

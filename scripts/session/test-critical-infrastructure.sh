@@ -103,16 +103,16 @@ test_unmerged_detection() {
 
     # Create unmerged branch (1 commit ahead)
     git checkout -b test-unmerged-branch 2>/dev/null || git checkout test-unmerged-branch
-    echo "test change" >> .jfl/test-file.txt
-    git add .jfl/test-file.txt
+    echo "test change" >> .tenet/test-file.txt
+    git add .tenet/test-file.txt
     git commit -m "test: unmerged commit" >/dev/null 2>&1 || true
     git checkout main 2>/dev/null
 
     # Run doctor and capture output
-    output=$("$SCRIPT_DIR/jfl-doctor.sh" --verbose 2>&1 || true)
+    output=$("$SCRIPT_DIR/tenet-doctor.sh" --verbose 2>&1 || true)
 
     # Test: Check code has MERGED label (may not appear in output if no merged orphans exist)
-    if grep -q "✓ MERGED (safe to delete):" "$SCRIPT_DIR/jfl-doctor.sh"; then
+    if grep -q "✓ MERGED (safe to delete):" "$SCRIPT_DIR/tenet-doctor.sh"; then
         pass "Merged branches labeled as safe in code"
     else
         fail "Merged branches not properly labeled in code"
@@ -126,7 +126,7 @@ test_unmerged_detection() {
     fi
 
     # Test: Check code formats commit counts correctly
-    if grep -q "commits NOT in main" "$SCRIPT_DIR/jfl-doctor.sh"; then
+    if grep -q "commits NOT in main" "$SCRIPT_DIR/tenet-doctor.sh"; then
         pass "Unmerged commit count format present in code"
     else
         fail "Unmerged commit count format missing"
@@ -134,7 +134,7 @@ test_unmerged_detection() {
 
     # Anti-test: Verify unmerged branches are NEVER deleted in --fix mode
     before_count=$(git branch --list 'test-*' | wc -l | tr -d ' ')
-    "$SCRIPT_DIR/jfl-doctor.sh" --fix >/dev/null 2>&1 || true
+    "$SCRIPT_DIR/tenet-doctor.sh" --fix >/dev/null 2>&1 || true
     after_count=$(git branch --list 'test-*' | wc -l | tr -d ' ')
 
     if git rev-parse test-unmerged-branch >/dev/null 2>&1; then
@@ -145,7 +145,7 @@ test_unmerged_detection() {
 
     # Cleanup
     cleanup_test_branches
-    rm -f .jfl/test-file.txt
+    rm -f .tenet/test-file.txt
 }
 
 # ==============================================================================
@@ -192,7 +192,7 @@ test_repo_dir_resolution() {
     section "Test 4: REPO_DIR Resolution (works from worktrees)"
 
     # Check that doctor uses git to find main repo
-    if grep -q "git rev-parse --path-format=absolute --git-common-dir" "$SCRIPT_DIR/jfl-doctor.sh"; then
+    if grep -q "git rev-parse --path-format=absolute --git-common-dir" "$SCRIPT_DIR/tenet-doctor.sh"; then
         pass "Doctor script uses git to find main repo"
     else
         fail "Doctor script doesn't resolve repo correctly"
@@ -200,7 +200,7 @@ test_repo_dir_resolution() {
 
     # Test from main repo
     cd "$REPO_DIR"
-    detected_repo=$("$SCRIPT_DIR/jfl-doctor.sh" 2>&1 | grep -c "jfl doctor" || echo "0")
+    detected_repo=$("$SCRIPT_DIR/tenet-doctor.sh" 2>&1 | grep -c "tenet doctor" || echo "0")
     if [[ "$detected_repo" -gt 0 ]]; then
         pass "Doctor runs from main repo"
     else
@@ -212,7 +212,7 @@ test_repo_dir_resolution() {
         first_worktree=$(ls "$WORKTREES_DIR" | head -1)
         if [[ -n "$first_worktree" ]]; then
             cd "$WORKTREES_DIR/$first_worktree"
-            detected_repo=$("$SCRIPT_DIR/jfl-doctor.sh" 2>&1 | grep -c "jfl doctor" || echo "0")
+            detected_repo=$("$SCRIPT_DIR/tenet-doctor.sh" 2>&1 | grep -c "tenet doctor" || echo "0")
             if [[ "$detected_repo" -gt 0 ]]; then
                 pass "Doctor runs from worktree"
             else
@@ -262,7 +262,7 @@ test_session_sync() {
 main() {
     echo ""
     echo "╔══════════════════════════════════════════════════════════╗"
-    echo "║  JFL Critical Infrastructure Tests                       ║"
+    echo "║  TENET Critical Infrastructure Tests                       ║"
     echo "║  Work Loss Prevention                                    ║"
     echo "╚══════════════════════════════════════════════════════════╝"
 

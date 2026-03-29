@@ -1,5 +1,5 @@
 #!/bin/bash
-# session-end.sh - Gracefully end a JFL session
+# session-end.sh - Gracefully end a TENET session
 # Handles both worktree sessions (merge + cleanup) and main branch sessions
 #
 # Usage:
@@ -10,8 +10,8 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(pwd)"
-LOG_DIR="$PROJECT_ROOT/.jfl/logs"
-SESSION_FILE="$PROJECT_ROOT/.jfl/current-session.json"
+LOG_DIR="$PROJECT_ROOT/.tenet/logs"
+SESSION_FILE="$PROJECT_ROOT/.tenet/current-session.json"
 
 # Colors
 RED='\033[0;31m'
@@ -35,7 +35,7 @@ done
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  JFL Session End"
+echo "  TENET Session End"
 echo "  $(date '+%Y-%m-%d %H:%M:%S')"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -89,7 +89,7 @@ else
     SNAPSHOT_END="$LOG_DIR/snapshot-end-$(date +%Y%m%d-%H%M%S).txt"
     CRITICAL_PATHS=("knowledge/" "previews/" "content/" "suggestions/" "CLAUDE.md")
 
-    # Skip .jfl/ for snapshots (contains large memory.db)
+    # Skip .tenet/ for snapshots (contains large memory.db)
     # Use stat instead of md5 for speed (size + mtime is enough for change detection)
     for p in "${CRITICAL_PATHS[@]}"; do
         if [ -e "$PROJECT_ROOT/$p" ]; then
@@ -109,9 +109,9 @@ else
         echo -e "${BLUE}→${NC} Committing all changes..."
         git add -A
         # Unstage session metadata files that should never be committed
-        git reset HEAD .jfl/current-session-branch.txt 2>/dev/null || true
-        git reset HEAD .jfl/current-worktree.txt 2>/dev/null || true
-        git reset HEAD .jfl/worktree-path.txt 2>/dev/null || true
+        git reset HEAD .tenet/current-session-branch.txt 2>/dev/null || true
+        git reset HEAD .tenet/current-worktree.txt 2>/dev/null || true
+        git reset HEAD .tenet/worktree-path.txt 2>/dev/null || true
 
         COMMIT_MSG="session: end $(date '+%Y-%m-%d %H:%M')"
 

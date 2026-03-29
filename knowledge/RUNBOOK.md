@@ -1,4 +1,4 @@
-# jfl-template - Operations Runbook
+# tenet-template - Operations Runbook
 
 ## Common Tasks
 
@@ -7,7 +7,7 @@
 **When:** Instructions need to change, new sections added, behavior modified
 
 **Steps:**
-1. Edit `CLAUDE.md` in the jfl-template repo
+1. Edit `CLAUDE.md` in the tenet-template repo
 2. Test by reading through for consistency (no automated linting exists)
 3. Pay attention to:
    - Section ordering (CRITICAL sections should remain near top)
@@ -16,15 +16,15 @@
    - Hook references matching `.claude/settings.json`
 4. Commit: `git commit -m "docs: update CLAUDE.md - {what changed}"`
 5. Push: `git push origin main`
-6. Downstream projects pick up changes on next `jfl update`
+6. Downstream projects pick up changes on next `tenet update`
 
-**Risk:** High. CLAUDE.md controls agent behavior. Mistakes affect every project that runs `jfl update`. Test behavioral changes in a real project before pushing.
+**Risk:** High. CLAUDE.md controls agent behavior. Mistakes affect every project that runs `tenet update`. Test behavioral changes in a real project before pushing.
 
 ---
 
 ### Task: Add a New Skill
 
-**When:** New `/skill` command needed across all JFL projects
+**When:** New `/skill` command needed across all TENET projects
 
 **Steps:**
 1. Create directory: `.claude/skills/{skill-name}/`
@@ -113,7 +113,7 @@
    - `session-cleanup.sh` - Called by Stop hook. Merges session branch, cleans up.
    - `session-sync.sh` - Called by session-init.sh. Pulls latest from all repos.
    - `auto-commit.sh` - Background daemon. Commits every 120 seconds.
-   - `jfl-doctor.sh` - Health checks. Run manually or by init.
+   - `tenet-doctor.sh` - Health checks. Run manually or by init.
 3. Ensure scripts are executable: `chmod +x scripts/session/*.sh`
 4. Test the script manually before pushing:
    ```bash
@@ -122,7 +122,7 @@
    ./scripts/session/session-init.sh
 
    # For doctor:
-   ./scripts/session/jfl-doctor.sh --verbose
+   ./scripts/session/tenet-doctor.sh --verbose
    ```
 5. Commit and push
 
@@ -167,7 +167,7 @@
 
 ---
 
-### Task: Test Template with `jfl init`
+### Task: Test Template with `tenet init`
 
 **When:** After making changes, verify the template produces a working project
 
@@ -178,7 +178,7 @@ git push origin main
 
 # 2. Init a test project
 cd /tmp
-jfl init test-template-$(date +%s)
+tenet init test-template-$(date +%s)
 
 # 3. Verify structure
 cd test-template-*
@@ -186,7 +186,7 @@ ls -la
 ls knowledge/
 ls scripts/session/
 ls .claude/skills/
-cat .jfl/config.json
+cat .tenet/config.json
 
 # 4. Verify session lifecycle
 # Open Claude Code here and check:
@@ -196,7 +196,7 @@ cat .jfl/config.json
 # - On exit: cleanup merges and pushes
 
 # 5. Verify doctor
-./scripts/session/jfl-doctor.sh
+./scripts/session/tenet-doctor.sh
 
 # 6. Verify context test
 ./scripts/session/test-context-preservation.sh
@@ -259,7 +259,7 @@ cat .claude/settings.json | jq '.hooks'
 
 **Resolution:**
 - Validate JSON with `jq`
-- Use `jfl services validate --fix` for service-specific hook issues
+- Use `tenet services validate --fix` for service-specific hook issues
 - Test hook commands manually in the terminal
 
 ---
@@ -274,10 +274,10 @@ cat .claude/settings.json | jq '.hooks'
 ./scripts/session/auto-commit.sh status
 
 # Check PID file
-cat .jfl/auto-commit.pid
+cat .tenet/auto-commit.pid
 
 # Check log
-tail -20 .jfl/auto-commit.log
+tail -20 .tenet/auto-commit.log
 
 # Check if critical paths exist
 ls knowledge/ content/ suggestions/
@@ -316,20 +316,20 @@ git merge --abort
 
 **Common Causes:**
 - Two sessions modified the same file
-- Session metadata files (`.jfl/current-session-branch.txt`) conflicting
+- Session metadata files (`.tenet/current-session-branch.txt`) conflicting
 - Product submodule reference conflicts
 
 **Resolution:**
 - Session cleanup auto-resolves known conflicts (session metadata, submodule refs)
 - For real content conflicts, manually merge: `git merge session-xxx`, resolve, commit
 - Or discard the branch if work is already on main: `git branch -D session-xxx`
-- Run doctor to clean up: `./scripts/session/jfl-doctor.sh --fix`
+- Run doctor to clean up: `./scripts/session/tenet-doctor.sh --fix`
 
 ---
 
 ### Problem: Template Changes Not Reaching Projects
 
-**Symptoms:** `jfl update` doesn't pick up latest changes
+**Symptoms:** `tenet update` doesn't pick up latest changes
 
 **Investigation:**
 ```bash
@@ -339,30 +339,30 @@ git log --oneline CLAUDE.md | head -5
 # Check when last update was
 git log -1 --format=%ci -- CLAUDE.md
 
-# Check jfl update behavior
-jfl update --verbose  # (flag may not exist)
+# Check tenet update behavior
+tenet update --verbose  # (flag may not exist)
 ```
 
 **Common Causes:**
 - Changes pushed to wrong branch (not main)
-- `jfl update` not implemented for all file types
+- `tenet update` not implemented for all file types
 - Network issue (can't reach github.com)
-- `jfl update` caches or uses a stale reference
+- `tenet update` caches or uses a stale reference
 
 **Resolution:**
-- Verify changes are on main: `git -C /path/to/jfl-template log --oneline -5`
+- Verify changes are on main: `git -C /path/to/tenet-template log --oneline -5`
 - Manual update: copy files directly from template to project
-- Check jfl CLI source code for update behavior
+- Check tenet CLI source code for update behavior
 
 ---
 
 ### Problem: Doctor Reports Stale Sessions
 
-**Symptoms:** `jfl-doctor.sh` shows stale sessions with uncommitted work
+**Symptoms:** `tenet-doctor.sh` shows stale sessions with uncommitted work
 
 **Investigation:**
 ```bash
-./scripts/session/jfl-doctor.sh --verbose
+./scripts/session/tenet-doctor.sh --verbose
 
 # Check specific worktree
 ls worktrees/
@@ -374,7 +374,7 @@ git log --oneline -5
 **Resolution:**
 ```bash
 # Auto-fix (commits uncommitted work, removes merged branches)
-./scripts/session/jfl-doctor.sh --fix
+./scripts/session/tenet-doctor.sh --fix
 
 # Or migrate to branch sessions (removes all worktrees)
 ./scripts/migrate-to-branch-sessions.sh
@@ -385,8 +385,8 @@ git log --oneline -5
 ## Regular Maintenance
 
 ### After Major Changes
-- [ ] Test `jfl init` with new template
-- [ ] Test `jfl update` in an existing project
+- [ ] Test `tenet init` with new template
+- [ ] Test `tenet update` in an existing project
 - [ ] Verify hooks fire correctly in Claude Code
 - [ ] Run doctor in a test project
 - [ ] Check bash 3.2 compatibility on macOS
@@ -404,13 +404,13 @@ git log --oneline -5
 
 ```bash
 # View template structure
-ls -R /path/to/jfl-template
+ls -R /path/to/tenet-template
 
 # Check for hardcoded paths
-grep -r "/Users/" /path/to/jfl-template --include="*.json" --include="*.sh"
+grep -r "/Users/" /path/to/tenet-template --include="*.json" --include="*.sh"
 
 # Validate JSON configs
-cat .jfl/config.json | jq .
+cat .tenet/config.json | jq .
 cat .claude/settings.json | jq .
 cat .mcp.json | jq .
 
@@ -424,7 +424,7 @@ ls -la scripts/session/*.sh
 git log --oneline --all
 
 # Check what a fresh clone looks like
-git clone git@github.com:402goose/jfl-template.git /tmp/template-test
+git clone git@github.com:402goose/tenet-template.git /tmp/template-test
 ls -la /tmp/template-test
 rm -rf /tmp/template-test
 ```

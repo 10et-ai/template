@@ -10,7 +10,7 @@
           },
           {
             "type": "command",
-            "command": "PORT=$(jq -r '.contextHub.port // empty' .jfl/config.json 2>/dev/null); if [ -n \"$PORT\" ]; then curl -sf http://localhost:$PORT/health >/dev/null 2>&1 || jfl context-hub ensure >> .jfl/logs/context-hub.log 2>&1; fi",
+            "command": "PORT=$(jq -r '.contextHub.port // empty' .tenet/config.json 2>/dev/null); if [ -n \"$PORT\" ]; then curl -sf http://localhost:$PORT/health >/dev/null 2>&1 || tenet context-hub ensure >> .tenet/logs/context-hub.log 2>&1; fi",
             "async": true
           }
         ]
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current); MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1); FILES=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null | tr '\\n' ', ' | sed 's/,$//'); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL REQUIRED: Git commit detected'; echo '═══════════════════════════════════════════════════════════'; echo \"Commit: $(git rev-parse --short HEAD 2>/dev/null)\"; echo \"Message: $MSG\"; echo \"Files: $FILES\"; echo ''; echo 'WRITE JOURNAL ENTRY NOW. File: .jfl/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'; fi"
+            "command": "if echo \"$TOOL_INPUT\" | grep -qE 'git commit'; then BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); MSG=$(git log -1 --pretty=%B 2>/dev/null | head -1); FILES=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null | tr '\\n' ', ' | sed 's/,$//'); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL REQUIRED: Git commit detected'; echo '═══════════════════════════════════════════════════════════'; echo \"Commit: $(git rev-parse --short HEAD 2>/dev/null)\"; echo \"Message: $MSG\"; echo \"Files: $FILES\"; echo ''; echo 'WRITE JOURNAL ENTRY NOW. File: .tenet/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'; fi"
           }
         ]
       },
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$TOOL_INPUT\" | grep -q '\"status\":\\s*\"completed\"'; then BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL REQUIRED: Task completed'; echo '═══════════════════════════════════════════════════════════'; echo 'WRITE JOURNAL ENTRY NOW. File: .jfl/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'; fi"
+            "command": "if echo \"$TOOL_INPUT\" | grep -q '\"status\":\\s*\"completed\"'; then BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL REQUIRED: Task completed'; echo '═══════════════════════════════════════════════════════════'; echo 'WRITE JOURNAL ENTRY NOW. File: .tenet/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'; fi"
           }
         ]
       }
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL CHECK: User approved/confirmed something'; echo '═══════════════════════════════════════════════════════════'; echo 'If a decision or feature was just approved, write journal entry.'; echo 'File: .jfl/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'"
+            "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '═══════════════════════════════════════════════════════════'; echo '📝 JOURNAL CHECK: User approved/confirmed something'; echo '═══════════════════════════════════════════════════════════'; echo 'If a decision or feature was just approved, write journal entry.'; echo 'File: .tenet/journal/'\"${BRANCH}\"'.jsonl'; echo '═══════════════════════════════════════════════════════════'"
           }
         ]
       }
@@ -63,11 +63,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".jfl/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo '⚠️  No journal entry for session'; else echo '✓ Journal exists'; fi; exit 0"
+            "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".tenet/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo '⚠️  No journal entry for session'; else echo '✓ Journal exists'; fi; exit 0"
           },
           {
             "type": "command",
-            "command": "./scripts/session/session-cleanup.sh >> .jfl/logs/session-cleanup.log 2>&1 || echo 'Cleanup skipped'; exit 0"
+            "command": "./scripts/session/session-cleanup.sh >> .tenet/logs/session-cleanup.log 2>&1 || echo 'Cleanup skipped'; exit 0"
           }
         ]
       }
@@ -78,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".jfl/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo ''; echo '🚨 CONTEXT COMPACTING - WRITE JOURNAL NOW'; echo \"File: .jfl/journal/${BRANCH}.jsonl\"; fi"
+            "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".tenet/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo ''; echo '🚨 CONTEXT COMPACTING - WRITE JOURNAL NOW'; echo \"File: .tenet/journal/${BRANCH}.jsonl\"; fi"
           },
           {
             "type": "command",

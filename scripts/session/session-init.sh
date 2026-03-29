@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# session-init.sh - Initialize a JFL session properly
+# session-init.sh - Initialize a TENET session properly
 #
 # Called by SessionStart hook. Does:
 # 1. Quick doctor check (warn only, don't block)
@@ -13,7 +13,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="${JFL_REPO_DIR:-$(pwd)}"
+REPO_DIR="${TENET_REPO_DIR:-$(pwd)}"
 WORKTREES_DIR="$REPO_DIR/worktrees"
 
 cd "$REPO_DIR" || exit 1
@@ -31,7 +31,7 @@ NC='\033[0m'
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  JFL Session Init"
+echo "  TENET Session Init"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Sync repos before creating worktree (ensures worktree is from latest main)
@@ -53,7 +53,7 @@ active_count=0
 if [[ -d "$WORKTREES_DIR" ]]; then
     for worktree in "$WORKTREES_DIR"/session-*; do
         if [[ -d "$worktree" ]]; then
-            pid_file="$worktree/.jfl/auto-commit.pid"
+            pid_file="$worktree/.tenet/auto-commit.pid"
             if [[ -f "$pid_file" ]]; then
                 pid=$(cat "$pid_file" 2>/dev/null)
                 if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
@@ -79,7 +79,7 @@ fi
 
 if [[ $stale_count -gt 5 ]]; then
     echo -e "${YELLOW}→${NC}  Cleaning up stale sessions (> 5)..."
-    "$SCRIPT_DIR/jfl-doctor.sh" --fix 2>/dev/null | grep -E "^  (Cleaning|✓)" || true
+    "$SCRIPT_DIR/tenet-doctor.sh" --fix 2>/dev/null | grep -E "^  (Cleaning|✓)" || true
 fi
 
 # ==============================================================================
@@ -145,7 +145,7 @@ if [[ -d "$WORKTREES_DIR" ]]; then
 
                     if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
                         # Critical paths
-                        git add knowledge/ previews/ content/ suggestions/ CLAUDE.md .jfl/ 2>/dev/null || true
+                        git add knowledge/ previews/ content/ suggestions/ CLAUDE.md .tenet/ 2>/dev/null || true
 
                         if git commit -m "crash recovery: auto-save uncommitted work from $session" 2>/dev/null; then
                             echo -e "  ${GREEN}✓${NC} $session - committed and saved"
@@ -177,7 +177,7 @@ if [[ -d "$WORKTREES_DIR" ]]; then
                     for session in $worktrees_with_changes; do
                         worktree_path="$WORKTREES_DIR/$session"
                         cd "$worktree_path"
-                        git add knowledge/ previews/ content/ suggestions/ CLAUDE.md .jfl/ 2>/dev/null || true
+                        git add knowledge/ previews/ content/ suggestions/ CLAUDE.md .tenet/ 2>/dev/null || true
                         git commit -m "crash recovery: manual save from $session" 2>/dev/null || true
                         git push origin "$(git branch --show-current)" 2>/dev/null || true
                         cd "$REPO_DIR"
@@ -200,7 +200,7 @@ if [[ -d "$WORKTREES_DIR" ]]; then
 fi
 
 # ==============================================================================
-# Step 2.9: Check for concurrent sessions via jfl-services
+# Step 2.9: Check for concurrent sessions via tenet-services
 # ==============================================================================
 
 # Generate session details first
@@ -212,12 +212,12 @@ random_id=$(openssl rand -hex 3 2>/dev/null || printf "%06x" $RANDOM$RANDOM)
 session_name="session-${user}-${date_str}-${time_str}-${random_id}"
 
 # Get working branch (from config or current branch)
-working_branch=$(jq -r '.working_branch // empty' .jfl/config.json 2>/dev/null)
+working_branch=$(jq -r '.working_branch // empty' .tenet/config.json 2>/dev/null)
 if [[ -z "$working_branch" ]]; then
     working_branch=$(git branch --show-current)
 fi
 
-# Check for concurrent sessions via jfl-services API
+# Check for concurrent sessions via tenet-services API
 use_worktree=false
 api_response=""
 if command -v curl >/dev/null 2>&1; then
@@ -234,7 +234,7 @@ if command -v curl >/dev/null 2>&1; then
         fi
     else
         # API unavailable - fall back to local detection
-        echo -e "${YELLOW}→${NC}  jfl-services unavailable - checking locally..."
+        echo -e "${YELLOW}→${NC}  tenet-services unavailable - checking locally..."
         local_sessions=$(ps aux | grep -c "claude.*$(pwd)" 2>/dev/null || echo "1")
         if [[ $local_sessions -gt 2 ]]; then
             use_worktree=true
@@ -246,7 +246,7 @@ else
     echo -e "${GREEN}→${NC}  Working directly on branch $working_branch"
 fi
 
-# Register this session with jfl-services
+# Register this session with tenet-services
 if command -v curl >/dev/null 2>&1; then
     curl -s -X POST "http://localhost:3401/sessions/start" \
         -H "Content-Type: application/json" \
@@ -285,25 +285,25 @@ if [[ "$use_worktree" == "true" ]]; then
         fi
 
         # Create session directories
-        mkdir -p .jfl/logs
+        mkdir -p .tenet/logs
 
         # CRITICAL: Symlink journal to main repo so entries persist after worktree cleanup
-        rm -rf .jfl/journal 2>/dev/null || true
-        ln -sf "$REPO_DIR/.jfl/journal" .jfl/journal
+        rm -rf .tenet/journal 2>/dev/null || true
+        ln -sf "$REPO_DIR/.tenet/journal" .tenet/journal
         echo -e "${GREEN}✓${NC}  Journal symlinked to main repo"
 
         # Start auto-commit in background
         if [[ -x "$SCRIPT_DIR/auto-commit.sh" ]]; then
-            "$SCRIPT_DIR/auto-commit.sh" start >> .jfl/logs/auto-commit.log 2>&1 &
+            "$SCRIPT_DIR/auto-commit.sh" start >> .tenet/logs/auto-commit.log 2>&1 &
             echo -e "${GREEN}✓${NC}  Auto-commit started"
         fi
 
         cd "$REPO_DIR"
 
         # Save paths
-        echo "$worktree_path" > "$REPO_DIR/.jfl/current-worktree.txt"
-        echo "$session_name" > "$REPO_DIR/.jfl/current-session-branch.txt"
-        echo "$session_name" > "$worktree_path/.jfl/current-session-branch.txt"
+        echo "$worktree_path" > "$REPO_DIR/.tenet/current-worktree.txt"
+        echo "$session_name" > "$REPO_DIR/.tenet/current-session-branch.txt"
+        echo "$session_name" > "$worktree_path/.tenet/current-session-branch.txt"
 
         echo ""
         echo -e "${GREEN}✓${NC}  Session ready in worktree: $worktree_path"
@@ -332,17 +332,17 @@ if [[ "$use_worktree" != "true" ]]; then
     fi
 
     # Create session directories
-    mkdir -p .jfl/logs
+    mkdir -p .tenet/logs
 
     # Start auto-commit in background
     if [[ -x "$SCRIPT_DIR/auto-commit.sh" ]]; then
-        "$SCRIPT_DIR/auto-commit.sh" start >> .jfl/logs/auto-commit.log 2>&1 &
+        "$SCRIPT_DIR/auto-commit.sh" start >> .tenet/logs/auto-commit.log 2>&1 &
         echo -e "${GREEN}✓${NC}  Auto-commit started"
     fi
 
     # Save session info (no worktree path in direct mode)
-    echo "direct" > "$REPO_DIR/.jfl/current-worktree.txt"
-    echo "$session_name" > "$REPO_DIR/.jfl/current-session-branch.txt"
+    echo "direct" > "$REPO_DIR/.tenet/current-worktree.txt"
+    echo "$session_name" > "$REPO_DIR/.tenet/current-session-branch.txt"
 
     echo ""
     echo -e "${GREEN}✓${NC}  Session ready on branch: $session_name"

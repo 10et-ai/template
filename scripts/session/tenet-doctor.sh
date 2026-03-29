@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# jfl-doctor.sh - Health check for JFL projects
+# tenet-doctor.sh - Health check for TENET projects
 # Inspired by Takopi's doctor command
 #
 # Usage:
-#   ./scripts/session/jfl-doctor.sh           # Run health checks
-#   ./scripts/session/jfl-doctor.sh --fix     # Auto-fix issues
-#   ./scripts/session/jfl-doctor.sh --json    # Output as JSON
+#   ./scripts/session/tenet-doctor.sh           # Run health checks
+#   ./scripts/session/tenet-doctor.sh --fix     # Auto-fix issues
+#   ./scripts/session/tenet-doctor.sh --json    # Output as JSON
 
 set -e
 
@@ -29,7 +29,7 @@ else
 fi
 
 WORKTREES_DIR="$REPO_DIR/worktrees"
-SESSIONS_DIR="$REPO_DIR/.jfl/sessions"
+SESSIONS_DIR="$REPO_DIR/.tenet/sessions"
 
 # Colors
 RED='\033[0;31m'
@@ -203,7 +203,7 @@ check_stale_sessions() {
     for worktree in "$WORKTREES_DIR"/session-*; do
         if [[ -d "$worktree" ]]; then
             local session_name=$(basename "$worktree")
-            local pid_file="$worktree/.jfl/auto-commit.pid"
+            local pid_file="$worktree/.tenet/auto-commit.pid"
 
             if [[ -f "$pid_file" ]]; then
                 local pid=$(cat "$pid_file" 2>/dev/null)
@@ -283,8 +283,8 @@ cleanup_stale_session() {
     cd "$REPO_DIR"
 
     # Stop any background processes
-    if [[ -f "$worktree_path/.jfl/auto-commit.pid" ]]; then
-        local pid=$(cat "$worktree_path/.jfl/auto-commit.pid")
+    if [[ -f "$worktree_path/.tenet/auto-commit.pid" ]]; then
+        local pid=$(cat "$worktree_path/.tenet/auto-commit.pid")
         kill "$pid" 2>/dev/null || true
     fi
 
@@ -308,7 +308,7 @@ cleanup_stale_session() {
         rm -f "$SESSIONS_DIR/$session_name.json"
     fi
 
-    # Remove from jfl-services session tracking
+    # Remove from tenet-services session tracking
     if command -v curl >/dev/null 2>&1; then
         curl -s -X DELETE "http://localhost:3401/sessions/$session_name" >/dev/null 2>&1 || true
     fi
@@ -435,7 +435,7 @@ check_locks() {
     local lock_list=""
 
     # Check for .lock files with stale PIDs
-    local lock_files=$(find "$REPO_DIR/.jfl" "$WORKTREES_DIR" -name "*.lock" 2>/dev/null || true)
+    local lock_files=$(find "$REPO_DIR/.tenet" "$WORKTREES_DIR" -name "*.lock" 2>/dev/null || true)
     for lock_file in $lock_files; do
         if [[ -f "$lock_file" ]]; then
             # Try to parse PID from lock file
@@ -465,7 +465,7 @@ check_locks() {
 
 # Check: Memory MCP
 check_memory() {
-    local memory_db="$REPO_DIR/.jfl/memory.db"
+    local memory_db="$REPO_DIR/.tenet/memory.db"
 
     if [[ ! -f "$memory_db" ]]; then
         report "memory" "warning" "not initialized"
@@ -580,7 +580,7 @@ check_session_state() {
 main() {
     if ! $JSON_MODE; then
         echo ""
-        echo "jfl doctor"
+        echo "tenet doctor"
         echo "─────────────────────────────────────"
     fi
 
@@ -690,7 +690,7 @@ main() {
             else
                 echo -e "$ISSUES error(s), $WARNINGS warning(s)"
                 echo ""
-                echo "Run 'jfl-doctor.sh --fix' to auto-fix issues"
+                echo "Run 'tenet-doctor.sh --fix' to auto-fix issues"
             fi
         else
             echo -e "${GREEN}All checks passed!${NC}"

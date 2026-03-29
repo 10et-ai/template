@@ -1,47 +1,47 @@
-# jfl-template - Deployment & Distribution
+# tenet-template - Deployment & Distribution
 
 ## Distribution Model
 
-jfl-template is not deployed as a running service. It is a **git repository template** that gets cloned by the `jfl init` command. Distribution happens through GitHub.
+tenet-template is not deployed as a running service. It is a **git repository template** that gets cloned by the `tenet init` command. Distribution happens through GitHub.
 
-**Repository:** git@github.com:402goose/jfl-template.git
+**Repository:** git@github.com:402goose/tenet-template.git
 **Branch:** `main` (single branch, no staging/production split)
 **Access:** TBD - needs investigation (currently appears to be private under 402goose org)
 
 ## How the Template Reaches Users
 
-### New Projects (`jfl init`)
+### New Projects (`tenet init`)
 
 ```
-User runs: jfl init my-project
+User runs: tenet init my-project
     │
-    ├── jfl CLI clones 402goose/jfl-template
+    ├── tenet CLI clones 402goose/tenet-template
     ├── Strips .git, re-initializes
-    ├── Customizes .jfl/config.json
+    ├── Customizes .tenet/config.json
     ├── Creates initial commit
-    └── Result: my-project/ with full JFL structure
+    └── Result: my-project/ with full TENET structure
 ```
 
-### Existing Projects (`jfl update`)
+### Existing Projects (`tenet update`)
 
 ```
-User runs: jfl update
+User runs: tenet update
     │
-    ├── jfl CLI fetches latest from 402goose/jfl-template
+    ├── tenet CLI fetches latest from 402goose/tenet-template
     ├── Replaces CLAUDE.md
     ├── Updates scripts/session/*
     ├── Updates .claude/skills/*
     ├── Updates .claude/settings.json (hooks)
     ├── Does NOT touch knowledge/, content/, suggestions/
-    └── Result: project updated with latest JFL infrastructure
+    └── Result: project updated with latest TENET infrastructure
 ```
 
 ## Publishing Changes
 
 ### Workflow for Template Updates
 
-1. **Make changes** in the jfl-template repository
-2. **Test locally** by running `jfl init test-project` from a clean directory and verifying the result
+1. **Make changes** in the tenet-template repository
+2. **Test locally** by running `tenet init test-project` from a clean directory and verifying the result
 3. **Commit** with descriptive message (conventional commits used: `feat:`, `fix:`, etc.)
 4. **Push to main**: `git push origin main`
 
@@ -49,9 +49,9 @@ That is the complete publishing process. There are no build steps, no CI/CD pipe
 
 ### What Gets Updated vs What Stays
 
-When pushing changes to jfl-template, understand the impact on downstream projects:
+When pushing changes to tenet-template, understand the impact on downstream projects:
 
-| File/Directory | Updated by `jfl update`? | Risk Level |
+| File/Directory | Updated by `tenet update`? | Risk Level |
 |----------------|--------------------------|------------|
 | `CLAUDE.md` | Yes - full replacement | High - behavioral changes |
 | `scripts/session/*` | Yes | Medium - session lifecycle changes |
@@ -59,7 +59,7 @@ When pushing changes to jfl-template, understand the impact on downstream projec
 | `.claude/skills/*` | Yes | Low - additive |
 | `.mcp.json` | TBD | Low |
 | `knowledge/*.md` | No - user content | N/A |
-| `.jfl/config.json` | No - user config | N/A |
+| `.tenet/config.json` | No - user config | N/A |
 | `content/`, `suggestions/` | No - user content | N/A |
 | `templates/*` | TBD - needs investigation | Low |
 | `crm` | TBD - needs investigation | Low |
@@ -78,7 +78,7 @@ There is **no formal versioning** in place:
 ### Recommended Approach (TBD)
 
 A versioning strategy should be established. Options:
-1. **Semantic version tags** on git (e.g., `v1.0.0`) - allows `jfl update` to target specific versions
+1. **Semantic version tags** on git (e.g., `v1.0.0`) - allows `tenet update` to target specific versions
 2. **Date-based versions** (e.g., `2026.02.16`) - simpler, matches the session-oriented workflow
 3. **CLAUDE.md version header** - embed version in the instructions file itself
 
@@ -90,18 +90,18 @@ The template itself does not require environment variables to function. However,
 |----------|---------|-------------|
 | `CRM_SHEET_ID` | Google Sheets ID for CRM | `./crm` (Google Sheets backend) |
 | `AIRTABLE_API_KEY` | Airtable API key | `./crm` (Airtable backend) |
-| `OPENAI_API_KEY` | OpenAI embeddings for memory search | jfl-context-hub (optional) |
+| `OPENAI_API_KEY` | OpenAI embeddings for memory search | tenet-context-hub (optional) |
 | `NODE_ENV` | Node environment | Default in config.json |
 
 ## Prerequisites for Development
 
-To work on jfl-template itself:
+To work on tenet-template itself:
 
 - **Git** 2.5+ (for worktree support in session scripts)
 - **Bash** 3.2+ (macOS default; 4+ preferred for full feature set)
 - **Node.js** 14+ (for `./crm` CLI, which uses ES modules)
 - **jq** (used by several scripts for JSON parsing)
-- **curl** (used by session scripts for jfl-services API)
+- **curl** (used by session scripts for tenet-services API)
 - **openssl** (used for random session ID generation)
 
 ## Testing
@@ -112,7 +112,7 @@ There is no automated test suite for the template as a whole. Testing is manual:
 
 ```bash
 # Test 1: Fresh init
-jfl init test-project
+tenet init test-project
 cd test-project
 # Verify directory structure, CLAUDE.md, hooks, config
 
@@ -123,7 +123,7 @@ cd test-project
 # End session, verify cleanup
 
 # Test 3: Doctor check
-./scripts/session/jfl-doctor.sh
+./scripts/session/tenet-doctor.sh
 # Should report clean state
 
 # Test 4: Context preservation
@@ -147,18 +147,18 @@ Several test scripts exist in `scripts/session/`:
 
 If a template update causes problems in downstream projects:
 
-1. **For `jfl update` issues:** The user's git history contains the pre-update state. `git diff HEAD~1 CLAUDE.md` shows what changed. `git checkout HEAD~1 -- CLAUDE.md` reverts.
-2. **For `jfl init` issues:** Delete the broken project directory and re-init from a known-good commit: `jfl init my-project --ref <commit-hash>` (TBD - this flag may not exist yet).
-3. **For template repo issues:** `git revert <commit>` on jfl-template, push to main.
+1. **For `tenet update` issues:** The user's git history contains the pre-update state. `git diff HEAD~1 CLAUDE.md` shows what changed. `git checkout HEAD~1 -- CLAUDE.md` reverts.
+2. **For `tenet init` issues:** Delete the broken project directory and re-init from a known-good commit: `tenet init my-project --ref <commit-hash>` (TBD - this flag may not exist yet).
+3. **For template repo issues:** `git revert <commit>` on tenet-template, push to main.
 
 ## Monitoring
 
 There is no monitoring for the template repository itself. Downstream projects have:
 
-- `jfl-doctor.sh` for health checking
+- `tenet-doctor.sh` for health checking
 - `test-context-preservation.sh` for verifying file integrity
-- Auto-commit daemon logs in `.jfl/auto-commit.log`
-- Session cleanup logs in `.jfl/logs/session-cleanup.log`
+- Auto-commit daemon logs in `.tenet/auto-commit.log`
+- Session cleanup logs in `.tenet/logs/session-cleanup.log`
 
 ## Last Updated
 

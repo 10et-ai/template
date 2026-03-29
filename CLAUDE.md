@@ -1,10 +1,10 @@
-# JFL - Claude Instructions
+# TENET - Claude Instructions
 
 Your context layer. Any project. Any AI.
 
 ## Project Identity
 
-Get project name from `.jfl/config.json` → `name`, or `knowledge/VISION.md` → first heading, or directory name.
+Get project name from `.tenet/config.json` → `name`, or `knowledge/VISION.md` → first heading, or directory name.
 
 ## Philosophy
 
@@ -16,7 +16,7 @@ Vision emerges from doing, not declaring. Start immediately. Capture context int
 
 1. **Verify session branch:** `git branch --show-current` → should be `session-*`
 2. **Run sync:** `./scripts/session/session-sync.sh`
-3. **Get context:** Call `mcp__jfl-context__context_get` (returns journal entries + knowledge docs)
+3. **Get context:** Call `mcp__tenet-context__context_get` (returns journal entries + knowledge docs)
 4. **Show dashboard:** Run `/hud`
 
 **CRITICAL — Automatic Tool Invocation:**
@@ -50,7 +50,7 @@ Write journal entries as you work. Not at session end — after each significant
 | Something learned | `discovery` |
 | Milestone reached | `milestone` |
 
-**File:** `.jfl/journal/<session-branch>.jsonl` (one JSON per line)
+**File:** `.tenet/journal/<session-branch>.jsonl` (one JSON per line)
 
 ```json
 {
@@ -70,7 +70,7 @@ Write journal entries as you work. Not at session end — after each significant
 
 **Required:** `v`, `ts`, `session`, `type`, `title`, `summary` — **Strongly recommended:** `detail`, `files`
 
-The session branch comes from `cat .jfl/current-session-branch.txt` (written by session init). Use this, not `git branch --show-current`, to avoid race conditions.
+The session branch comes from `cat .tenet/current-session-branch.txt` (written by session init). Use this, not `git branch --show-current`, to avoid race conditions.
 
 **File Headers — MANDATORY for code files:**
 
@@ -98,14 +98,14 @@ When a decision is made:
 my-project-gtm/   ← this repo (GTM context, sessions, knowledge)
   knowledge/      ← strategy, vision, brand
   content/        ← marketing
-  .jfl/           ← journal, memory, config, services
+  .tenet/           ← journal, memory, config, services
   .claude/agents/ ← service agent definitions
   .claude/skills/ ← service skill wrappers
 ```
 
-Product repos are registered via `jfl onboard <path|url>` and accessed through service agents (`@service-name`). No submodules or symlinks.
+Product repos are registered via `tenet onboard <path|url>` and accessed through service agents (`@service-name`). No submodules or symlinks.
 
-`jfl update` updates GTM toolkit (CLAUDE.md, skills/) without touching service repos.
+`tenet update` updates GTM toolkit (CLAUDE.md, skills/) without touching service repos.
 
 ---
 
@@ -120,7 +120,7 @@ Product repos are registered via `jfl onboard <path|url>` and accessed through s
 | `knowledge/BRAND_DECISIONS.md` | Finalized brand choices |
 | `knowledge/TASKS.md` | Master task list |
 
-Use `jfl_context` / `mcp__jfl-context__context_get` to get these — don't read files individually.
+Use `jfl_context` / `mcp__tenet-context__context_get` to get these — don't read files individually.
 
 ---
 
@@ -130,11 +130,11 @@ Both runtimes expose the same capabilities under different names:
 
 | Capability | Claude Code MCP | Pi tool |
 |------------|-----------------|---------|
-| Get project context | `mcp__jfl-context__context_get` | `jfl_context` |
-| Search past work | `mcp__jfl-context__memory_search` | `jfl_memory_search` |
-| Add memory | `mcp__jfl-context__memory_add` | `jfl_memory_add` |
+| Get project context | `mcp__tenet-context__context_get` | `jfl_context` |
+| Search past work | `mcp__tenet-context__memory_search` | `jfl_memory_search` |
+| Add memory | `mcp__tenet-context__memory_add` | `jfl_memory_add` |
 | Project dashboard | `/hud` skill | `jfl_hud` |
-| Publish event | `mcp__jfl-context__events_publish` | `jfl_publish_event` |
+| Publish event | `mcp__tenet-context__events_publish` | `jfl_publish_event` |
 
 ---
 
@@ -144,7 +144,7 @@ Use `/end` skill for clean session close. It commits, merges session branch, and
 
 If closing manually:
 ```bash
-git add knowledge/ previews/ content/ suggestions/ .jfl/ CLAUDE.md
+git add knowledge/ previews/ content/ suggestions/ .tenet/ CLAUDE.md
 git commit -m "session: end $(date +%Y-%m-%d)"
 ```
 

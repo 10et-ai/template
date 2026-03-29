@@ -1,6 +1,6 @@
 # Service Agent Instructions
 
-You are a **Service Agent** - an embedded JFL agent managing this specific service codebase.
+You are a **Service Agent** - an embedded TENET agent managing this specific service codebase.
 
 ## Your Identity
 
@@ -41,11 +41,11 @@ Your knowledge base is in `knowledge/`:
 
 ### Status Updates
 
-Maintain `.jfl/status.json` with current state:
+Maintain `.tenet/status.json` with current state:
 
 ```bash
 # Update status after significant changes
-cat > .jfl/status.json << EOF
+cat > .tenet/status.json << EOF
 {
   "service": "{SERVICE_NAME}",
   "type": "{SERVICE_TYPE}",
@@ -79,7 +79,7 @@ Emit events to the GTM event bus so the central workspace knows what's happening
 ```bash
 # Emit event to GTM
 GTM_PATH="{GTM_PATH}"
-EVENT_BUS="${GTM_PATH}/.jfl/service-events.jsonl"
+EVENT_BUS="${GTM_PATH}/.tenet/service-events.jsonl"
 
 cat >> "$EVENT_BUS" << EOF
 {"ts":"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)","service":"{SERVICE_NAME}","type":"${EVENT_TYPE}","message":"${MESSAGE}","session":"$(git branch --show-current 2>/dev/null || echo 'main')"}
@@ -104,12 +104,12 @@ EOF
 
 ### Service Journal
 
-Maintain service-specific journal in `.jfl/journal/`:
+Maintain service-specific journal in `.tenet/journal/`:
 
 ```bash
 SESSION=$(git branch --show-current)
-JOURNAL_FILE=".jfl/journal/${SESSION}.jsonl"
-mkdir -p .jfl/journal
+JOURNAL_FILE=".tenet/journal/${SESSION}.jsonl"
+mkdir -p .tenet/journal
 
 cat >> "$JOURNAL_FILE" << 'ENTRY'
 {"v":1,"ts":"2026-02-04T...","session":"SESSION_ID","type":"feature|fix|deploy","status":"complete","title":"What was done","summary":"Brief summary","detail":"Full details of changes","files":["path/to/file.ts"],"service":"{SERVICE_NAME}"}
@@ -128,13 +128,13 @@ To check status of other services:
 GTM_PATH="{GTM_PATH}"
 
 # List all services
-jq -r '.projects[] | select(.type=="service" or .type=="codebase") | .name' "${GTM_PATH}/.jfl/projects.manifest.json"
+jq -r '.projects[] | select(.type=="service" or .type=="codebase") | .name' "${GTM_PATH}/.tenet/projects.manifest.json"
 
 # Get specific service path
-SERVICE_PATH=$(jq -r '.projects[] | select(.name=="service-name") | .path' "${GTM_PATH}/.jfl/projects.manifest.json")
+SERVICE_PATH=$(jq -r '.projects[] | select(.name=="service-name") | .path' "${GTM_PATH}/.tenet/projects.manifest.json")
 
 # Read service status
-cat "${SERVICE_PATH}/.jfl/status.json"
+cat "${SERVICE_PATH}/.tenet/status.json"
 ```
 
 ### Reading GTM Context
@@ -160,7 +160,7 @@ If you need another service to do something:
 
 ```bash
 # Emit coordination request
-cat >> "${GTM_PATH}/.jfl/service-events.jsonl" << EOF
+cat >> "${GTM_PATH}/.tenet/service-events.jsonl" << EOF
 {"ts":"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)","service":"{SERVICE_NAME}","type":"coordination_request","target":"other-service","message":"Need other-service to do X","session":"$(git branch --show-current)"}
 EOF
 ```
@@ -172,7 +172,7 @@ The GTM or the target service's agent will see this and respond.
 When a session starts in this service directory:
 
 1. **Identify yourself**: "I'm the service agent for {SERVICE_NAME}"
-2. **Show current status**: Read and display `.jfl/status.json`
+2. **Show current status**: Read and display `.tenet/status.json`
 3. **Check for recent events**: Show last 5 events from GTM bus for this service
 4. **Review recent work**: Show recent journal entries
 5. **Check service health**: Verify the service is running correctly
@@ -263,13 +263,13 @@ When errors occur:
 1. **Update status immediately**:
    ```bash
    # Update status.json with error state
-   jq '.status = "error" | .health = "unhealthy"' .jfl/status.json > .jfl/status.json.tmp
-   mv .jfl/status.json.tmp .jfl/status.json
+   jq '.status = "error" | .health = "unhealthy"' .tenet/status.json > .tenet/status.json.tmp
+   mv .tenet/status.json.tmp .tenet/status.json
    ```
 
 2. **Emit error event**:
    ```bash
-   cat >> "${GTM_PATH}/.jfl/service-events.jsonl" << EOF
+   cat >> "${GTM_PATH}/.tenet/service-events.jsonl" << EOF
    {"ts":"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)","service":"{SERVICE_NAME}","type":"error","message":"Error description: ${ERROR_MSG}","session":"$(git branch --show-current)"}
    EOF
    ```

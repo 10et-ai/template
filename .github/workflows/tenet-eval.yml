@@ -17,9 +17,9 @@ jobs:
     if: startsWith(github.head_ref, 'pp/') || contains(github.event.pull_request.labels.*.name, 'run-eval')
 
     env:
-      JFL_HUB_URL: ${{ secrets.JFL_HUB_URL }}
-      JFL_HUB_TOKEN: ${{ secrets.JFL_HUB_TOKEN }}
-      JFL_TELEMETRY: 'off'
+      TENET_HUB_URL: ${{ secrets.TENET_HUB_URL }}
+      TENET_HUB_TOKEN: ${{ secrets.TENET_HUB_TOKEN }}
+      TENET_TELEMETRY: 'off'
       NODE_OPTIONS: '--experimental-vm-modules'
 
     steps:
@@ -150,7 +150,7 @@ jobs:
           node -e "
             const fs = require('fs');
             const sections = [];
-            try { const c = JSON.parse(fs.readFileSync('.jfl/config.json','utf8')); sections.push('Project: ' + (c.name||'unknown') + ' - ' + (c.description||'')); } catch(e) {}
+            try { const c = JSON.parse(fs.readFileSync('.tenet/config.json','utf8')); sections.push('Project: ' + (c.name||'unknown') + ' - ' + (c.description||'')); } catch(e) {}
             try { sections.push(fs.readFileSync('knowledge/ARCHITECTURE.md','utf8').substring(0,1500)); } catch(e) {}
             try { sections.push(fs.readFileSync('knowledge/SERVICE_SPEC.md','utf8').substring(0,800)); } catch(e) {}
             fs.writeFileSync('/tmp/eval-context.txt', sections.join('\n'));
@@ -272,27 +272,27 @@ jobs:
           git checkout ${{ github.head_ref }}
 
           # Write eval entry
-          mkdir -p .jfl/eval
-          cat >> .jfl/eval/eval.jsonl << EOF
+          mkdir -p .tenet/eval
+          cat >> .tenet/eval/eval.jsonl << EOF
           {"v":1,"ts":"$(date -u +%Y-%m-%dT%H:%M:%SZ)","agent":"peter-parker","dataset":"ci-eval","metrics":{"test_pass_rate":${{ steps.pr_eval.outputs.score }},"tests_passed":${{ steps.pr_eval.outputs.passing }},"tests_total":${{ steps.pr_eval.outputs.total }}},"composite":${{ steps.pr_eval.outputs.score }},"delta":{"composite":${{ steps.delta.outputs.delta }}},"model_version":"pp-run","improved":${{ steps.delta.outputs.improved }},"pr_number":${{ github.event.pull_request.number }},"branch":"${{ github.head_ref }}"}
           EOF
 
           # Write eval:scored event for hub file watcher
-          cat >> .jfl/service-events.jsonl << EOF
+          cat >> .tenet/service-events.jsonl << EOF
           {"ts":"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)","type":"eval:scored","source":"ci","data":{"agent":"peter-parker","composite":${{ steps.pr_eval.outputs.score }},"baseline":${{ steps.baseline.outputs.score }},"delta":${{ steps.delta.outputs.delta }},"improved":"${{ steps.delta.outputs.improved }}","pr_number":${{ github.event.pull_request.number }},"branch":"${{ github.head_ref }}","run_url":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}","quality_score":${{ steps.ai_eval.outputs.quality_score }},"dim_correctness":${{ steps.ai_eval.outputs.dim_correctness }},"dim_coverage":${{ steps.ai_eval.outputs.dim_coverage }},"dim_architecture":${{ steps.ai_eval.outputs.dim_architecture }},"dim_value":${{ steps.ai_eval.outputs.dim_value }}}}
           EOF
 
-          git add .jfl/eval/eval.jsonl .jfl/service-events.jsonl
+          git add .tenet/eval/eval.jsonl .tenet/service-events.jsonl
           git commit -m "eval: scored PR #${{ github.event.pull_request.number }} (composite=${{ steps.pr_eval.outputs.score }}, delta=${{ steps.delta.outputs.delta }})"
           git push origin ${{ github.head_ref }}
 
       - name: Post eval:scored event to hub (best-effort)
-        if: env.JFL_HUB_URL != ''
+        if: env.TENET_HUB_URL != ''
         continue-on-error: true
         run: |
-          curl -sf -X POST "${JFL_HUB_URL}/api/events" \
+          curl -sf -X POST "${TENET_HUB_URL}/api/events" \
             -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${JFL_HUB_TOKEN}" \
+            -H "Authorization: Bearer ${TENET_HUB_TOKEN}" \
             -d '{
               "type": "eval:scored",
               "source": "github-actions",

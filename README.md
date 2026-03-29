@@ -1,10 +1,10 @@
-# JFL Template
+# TENET Template
 
-Starter template for new JFL GTM workspaces. Used by `jfl init` to scaffold new projects.
+Starter template for new TENET GTM workspaces. Used by `tenet init` to scaffold new projects.
 
 ## What This Is
 
-This repo is the canonical template that gets cloned when running `jfl init -n my-project`. It includes:
+This repo is the canonical template that gets cloned when running `tenet init -n my-project`. It includes:
 
 - Pre-configured `.claude/settings.json` with session hooks (SessionStart, PostToolUse, UserPromptSubmit, Stop, PreCompact)
 - `.mcp.json` for Context Hub MCP server integration
@@ -13,18 +13,18 @@ This repo is the canonical template that gets cloned when running `jfl init -n m
 - Session management scripts (`scripts/session/`)
 - CRM CLI wrapper
 - `CLAUDE.md` with full AI instructions
-- `.jfl/config.json` base configuration
+- `.tenet/config.json` base configuration
 
 ## Structure
 
 ```
-jfl-template/
+tenet-template/
 ├── .claude/
 │   ├── settings.json          # Claude Code hooks
 │   ├── service-settings.json  # Lighter-weight hooks for service agents
 │   ├── agents/                # Service agent definitions (scaffolded empty)
 │   └── skills/                # Pre-installed slash commands
-├── .jfl/
+├── .tenet/
 │   ├── config.json            # Project configuration
 │   ├── journal/               # Session journal entries
 │   └── logs/                  # Session logs
@@ -54,21 +54,21 @@ jfl-template/
 
 ## How It Gets Used
 
-1. User runs `jfl init -n my-project`
+1. User runs `tenet init -n my-project`
 2. CLI clones this template into `./my-project`
 3. Replaces placeholder values in config
 4. User starts working — `claude` fires SessionStart hooks automatically
 
 ## Updating the Template
 
-Changes here propagate to new projects only. Existing projects update via `jfl update` which pulls skills, scripts, and templates while preserving user content.
+Changes here propagate to new projects only. Existing projects update via `tenet update` which pulls skills, scripts, and templates while preserving user content.
 
 ## Related Repos
 
 | Repo | Purpose |
 |------|---------|
-| [jfl-cli](https://github.com/402goose/jfl-cli) | CLI tool that uses this template |
-| jfl-platform | Hosted platform (dashboard, auth, billing) |
+| [tenet-cli](https://github.com/402goose/tenet-cli) | CLI tool that uses this template |
+| tenet-platform | Hosted platform (dashboard, auth, billing) |
 
 ## License
 

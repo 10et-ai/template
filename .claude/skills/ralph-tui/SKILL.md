@@ -27,15 +27,15 @@ Show the ralph-tui command reference:
 Ralph TUI - AI Agent Loop Orchestrator
 
 Commands:
-  jfl ralph run --prd ./tasks/file.json    Run autonomous task loop
-  jfl ralph create-prd --chat              Create PRD with AI
-  jfl ralph setup                          Initialize in project
-  jfl ralph status                         Show session status
-  jfl ralph resume                         Resume paused session
+  tenet ralph run --prd ./tasks/file.json    Run autonomous task loop
+  tenet ralph create-prd --chat              Create PRD with AI
+  tenet ralph setup                          Initialize in project
+  tenet ralph status                         Show session status
+  tenet ralph resume                         Resume paused session
 
 Quick Start:
-  1. Create PRD: jfl ralph create-prd --chat
-  2. Run loop:   jfl ralph run --prd ./tasks/my-feature.json
+  1. Create PRD: tenet ralph create-prd --chat
+  2. Run loop:   tenet ralph run --prd ./tasks/my-feature.json
 
 Keyboard (in TUI):
   s = start, p = pause, q = quit
@@ -60,7 +60,7 @@ Which PRD to execute? (or 'new' to create one)
 
 3. Launch ralph-tui:
 ```bash
-jfl ralph run --prd <selected-file>
+tenet ralph run --prd <selected-file>
 ```
 
 ### If "create" or "new":
@@ -73,7 +73,7 @@ What do you want to build or accomplish?
 
 2. Launch the chat-based PRD creator:
 ```bash
-jfl ralph create-prd --chat --output ./tasks/
+tenet ralph create-prd --chat --output ./tasks/
 ```
 
 3. After PRD is created, offer to run it:
@@ -81,14 +81,14 @@ jfl ralph create-prd --chat --output ./tasks/
 PRD created: ./tasks/my-feature.json
 
 Want to start autonomous execution?
-  jfl ralph run --prd ./tasks/my-feature.json
+  tenet ralph run --prd ./tasks/my-feature.json
 ```
 
 ### If "status":
 
 Check ralph-tui status:
 ```bash
-jfl ralph status
+tenet ralph status
 ```
 
 Show current session info, completed tasks, remaining work.
@@ -177,14 +177,14 @@ Add relevant info the agent needs but won't find in the codebase.
 
 ## Integration with JFL
 
-Ralph TUI is bundled with JFL CLI:
+Ralph TUI is bundled with TENET CLI:
 
 ```bash
-# Install JFL (includes ralph-tui)
-npm install -g jfl
+# Install TENET (includes ralph-tui)
+npm install -g @tenet-ai/cli
 
-# Use ralph via jfl
-jfl ralph run --prd ./tasks/feature.json
+# Use ralph via tenet
+tenet ralph run --prd ./tasks/feature.json
 
 # Or directly
 ralph-tui run --prd ./tasks/feature.json

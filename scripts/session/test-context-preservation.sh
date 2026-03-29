@@ -113,7 +113,7 @@ check_git_sync() {
     fi
 }
 
-check_git_sync "$GTM_ROOT" "jfl-gtm"
+check_git_sync "$GTM_ROOT" "tenet-gtm"
 
 # Check product target
 PRODUCT_LINK="$GTM_ROOT/product"
@@ -126,7 +126,7 @@ if [ -L "$PRODUCT_LINK" ]; then
     fi
     RESOLVED=$(cd "$RESOLVED" 2>/dev/null && pwd)
     if [ -n "$RESOLVED" ]; then
-        check_git_sync "$RESOLVED" "jfl-platform"
+        check_git_sync "$RESOLVED" "tenet-platform"
     fi
 fi
 

@@ -20,7 +20,7 @@ Uses [qmd](https://github.com/tobi/qmd) - local hybrid search combining BM25 key
 
 ## Setup
 
-**New workspaces:** Search is set up automatically during `jfl init` if you choose to enable it.
+**New workspaces:** Search is set up automatically during `tenet init` if you choose to enable it.
 
 **Existing workspaces:** Follow the manual setup below.
 
@@ -55,7 +55,7 @@ bun install -g https://github.com/tobi/qmd
 qmd status
 ```
 
-Look for a collection that matches this workspace (check `.jfl/config.json` for the collection name).
+Look for a collection that matches this workspace (check `.tenet/config.json` for the collection name).
 
 **If no collection exists, guide setup:**
 
@@ -78,7 +78,7 @@ To set up search, run these commands:
 After running these, try /search again.
 ```
 
-**Note:** These commands are run automatically during `jfl init` if search is enabled. Only run manually for existing workspaces.
+**Note:** These commands are run automatically during `tenet init` if search is enabled. Only run manually for existing workspaces.
 
 ### Step 3: Run the search
 

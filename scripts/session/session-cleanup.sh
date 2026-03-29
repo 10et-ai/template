@@ -10,7 +10,7 @@ set -e
 
 # Get working branch from config (fallback to main)
 get_working_branch() {
-    local config_branch=$(jq -r '.working_branch // empty' .jfl/config.json 2>/dev/null)
+    local config_branch=$(jq -r '.working_branch // empty' .tenet/config.json 2>/dev/null)
     if [[ -n "$config_branch" ]]; then
         echo "$config_branch"
     else
@@ -24,8 +24,8 @@ WORKING_BRANCH=$(get_working_branch)
 echo "Stopping background processes..."
 
 # Stop auto-commit if running
-if [ -f ".jfl/auto-commit.pid" ]; then
-  PID=$(cat ".jfl/auto-commit.pid")
+if [ -f ".tenet/auto-commit.pid" ]; then
+  PID=$(cat ".tenet/auto-commit.pid")
   if kill -0 "$PID" 2>/dev/null; then
     echo "  Stopping auto-commit (PID: $PID)..."
     kill -TERM "$PID" 2>/dev/null || true
@@ -33,7 +33,7 @@ if [ -f ".jfl/auto-commit.pid" ]; then
     # Force kill if still running
     kill -0 "$PID" 2>/dev/null && kill -9 "$PID" 2>/dev/null || true
   fi
-  rm -f ".jfl/auto-commit.pid"
+  rm -f ".tenet/auto-commit.pid"
 fi
 
 # Stop auto-merge if running
@@ -84,9 +84,9 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
   else
     git add -A
     # Unstage session metadata files that should never be committed
-    git reset HEAD .jfl/current-session-branch.txt 2>/dev/null || true
-    git reset HEAD .jfl/current-worktree.txt 2>/dev/null || true
-    git reset HEAD .jfl/worktree-path.txt 2>/dev/null || true
+    git reset HEAD .tenet/current-session-branch.txt 2>/dev/null || true
+    git reset HEAD .tenet/current-worktree.txt 2>/dev/null || true
+    git reset HEAD .tenet/worktree-path.txt 2>/dev/null || true
     git commit -m "session: end $(date +%Y-%m-%d\ %H:%M)" || true
   fi
 fi
@@ -109,12 +109,12 @@ fi
 
 # Pre-merge cleanup: Remove files that will definitely conflict
 echo "Pre-merge cleanup..."
-git rm -f .jfl/current-session-branch.txt 2>/dev/null || true
-git rm -f .jfl/current-worktree.txt 2>/dev/null || true
-git rm -f .jfl/worktree-path.txt 2>/dev/null || true
+git rm -f .tenet/current-session-branch.txt 2>/dev/null || true
+git rm -f .tenet/current-worktree.txt 2>/dev/null || true
+git rm -f .tenet/worktree-path.txt 2>/dev/null || true
 
 # Remove any git conflict artifacts from previous failed merges
-find .jfl -name "journal~*" -type f -delete 2>/dev/null || true
+find .tenet -name "journal~*" -type f -delete 2>/dev/null || true
 
 # Commit cleanup if there are changes
 if ! git diff --quiet HEAD 2>/dev/null; then
@@ -129,14 +129,14 @@ cd "$MAIN_REPO"
 if ! git checkout "$WORKING_BRANCH" 2>/dev/null; then
   echo "⚠ Could not checkout $WORKING_BRANCH, skipping merge"
   echo "  Session branch $BRANCH preserved for manual merge"
-  # Notify jfl-services that session ended
+  # Notify tenet-services that session ended
   if command -v curl >/dev/null 2>&1; then
     curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
   fi
   exit 0
 fi
 
-# Attempt merge with auto-resolve for .jfl/ conflicts
+# Attempt merge with auto-resolve for .tenet/ conflicts
 MERGE_OUTPUT=$(git merge --no-edit -X ours "$BRANCH" 2>&1)
 MERGE_STATUS=$?
 
@@ -169,7 +169,7 @@ if [ $MERGE_STATUS -eq 0 ]; then
 
   echo "✓ Session cleanup complete - merged to $WORKING_BRANCH and pushed"
 
-  # Notify jfl-services that session ended
+  # Notify tenet-services that session ended
   if command -v curl >/dev/null 2>&1; then
     curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
   fi
@@ -187,12 +187,12 @@ else
     fi
 
     case "$file" in
-      .jfl/current-session-branch.txt|.jfl/current-worktree.txt|.jfl/worktree-path.txt)
+      .tenet/current-session-branch.txt|.tenet/current-worktree.txt|.tenet/worktree-path.txt)
         # Session metadata - just remove it
         echo "  Auto-resolving: $file (removing)"
         git rm -f "$file" 2>/dev/null || true
         ;;
-      .jfl/journal~*)
+      .tenet/journal~*)
         # Git conflict artifact - remove it
         echo "  Auto-resolving: $file (removing artifact)"
         git rm -f "$file" 2>/dev/null || true
@@ -250,7 +250,7 @@ else
 
     echo "✓ Session cleanup complete - merged to $WORKING_BRANCH and pushed"
 
-    # Notify jfl-services that session ended
+    # Notify tenet-services that session ended
     if command -v curl >/dev/null 2>&1; then
       curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
     fi
@@ -262,14 +262,14 @@ else
     git diff --name-only --diff-filter=U 2>/dev/null | sed 's/^/    - /'
     git merge --abort 2>/dev/null || true
 
-    # Notify jfl-services that session ended (even though we kept the branch)
+    # Notify tenet-services that session ended (even though we kept the branch)
     if command -v curl >/dev/null 2>&1; then
       curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
     fi
   fi
 fi
 
-# Final notification to jfl-services (in case we skipped merge paths)
+# Final notification to tenet-services (in case we skipped merge paths)
 if command -v curl >/dev/null 2>&1; then
   curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
 fi

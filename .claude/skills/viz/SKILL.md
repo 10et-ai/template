@@ -5,7 +5,7 @@ description: Terminal data visualization via kuva — inline plots for agents an
 
 # /viz — Terminal Visualization
 
-Pipe JFL data to kuva for inline terminal plots. Agents see results without leaving flow.
+Pipe TENET data to kuva for inline terminal plots. Agents see results without leaving flow.
 
 ## Prerequisites
 
@@ -41,25 +41,25 @@ Each `/viz` command:
 
 ### /viz events
 
-Read `.jfl/service-events.jsonl` and `.jfl/map-events.jsonl`:
+Read `.tenet/service-events.jsonl` and `.tenet/map-events.jsonl`:
 
 ```bash
 # Event type distribution
-cat .jfl/service-events.jsonl | \
+cat .tenet/service-events.jsonl | \
   jq -r '.type' | sort | uniq -c | sort -rn | \
   awk '{print $2"\t"$1}' | \
   kuva bar --label-col 0 --value-col 1 --title "Events by Type" --terminal
 
 # Service-to-service flow (sankey)
-cat .jfl/service-events.jsonl | \
+cat .tenet/service-events.jsonl | \
   jq -r '[.source // "unknown", .type, 1] | @tsv' | \
   kuva sankey --source-col 0 --target-col 1 --value-col 2 --title "Event Flows" --terminal
 ```
 
-Or use the programmatic API from `jfl-cli/src/lib/kuva.ts`:
+Or use the programmatic API from `tenet-cli/src/lib/kuva.ts`:
 
 ```typescript
-import { barChart, linePlot, sparkline } from 'jfl-cli/src/lib/kuva.js'
+import { barChart, linePlot, sparkline } from 'tenet-cli/src/lib/kuva.js'
 
 const events = loadEvents()
 const byType = countBy(events, 'type')
@@ -74,7 +74,7 @@ console.log(chart)
 
 ```bash
 # Sessions over time (line)
-cat .jfl/journal/*.jsonl | \
+cat .tenet/journal/*.jsonl | \
   jq -r 'select(.type == "session-end") | [.ts[:10], 1] | @tsv' | \
   sort | uniq -c | awk '{print $2"\t"$1}' | \
   kuva line --x 0 --y 1 --title "Sessions per Day" --terminal
@@ -84,7 +84,7 @@ cat .jfl/journal/*.jsonl | \
 
 ```bash
 # Cost by model (bar)
-cat .jfl/telemetry-queue.jsonl | \
+cat .tenet/telemetry-queue.jsonl | \
   jq -r 'select(.event == "stratus:api_call") | [(.model_name // "unknown"), .estimated_cost_usd] | @tsv' | \
   kuva bar --label-col 0 --value-col 1 --title "Cost by Model" --terminal
 ```
@@ -103,13 +103,13 @@ Or programmatically — arena's `formatLeaderboardPlots()` renders composite sco
 
 ```bash
 # Flow triggers (bar)
-cat .jfl/service-events.jsonl | \
+cat .tenet/service-events.jsonl | \
   jq -r 'select(.type == "flow:triggered") | .data.flow_name' | \
   sort | uniq -c | sort -rn | awk '{print $2"\t"$1}' | \
   kuva bar --label-col 0 --value-col 1 --title "Flow Triggers" --terminal
 
 # Flow trigger→action sankey
-cat .jfl/service-events.jsonl | \
+cat .tenet/service-events.jsonl | \
   jq -r 'select(.type == "flow:completed") | [.data.flow_name, .data.action_type, 1] | @tsv' | \
   kuva sankey --source-col 0 --target-col 1 --value-col 2 --title "Flow Actions" --terminal
 ```

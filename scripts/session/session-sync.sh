@@ -10,7 +10,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo "========================================"
-echo "JFL Session Sync"
+echo "TENET Session Sync"
 echo "========================================"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -96,7 +96,7 @@ sync_repo() {
 }
 
 # Sync main GTM repo
-sync_repo "$GTM_ROOT" "jfl-gtm"
+sync_repo "$GTM_ROOT" "tenet-gtm"
 
 # Check for product - submodule or symlink
 PRODUCT_PATH="$GTM_ROOT/product"
@@ -133,7 +133,7 @@ elif [ -L "$PRODUCT_PATH" ]; then
     RESOLVED_TARGET=$(cd "$RESOLVED_TARGET" 2>/dev/null && pwd)
 
     if [ -n "$RESOLVED_TARGET" ]; then
-        sync_repo "$RESOLVED_TARGET" "jfl-platform (product symlink target)"
+        sync_repo "$RESOLVED_TARGET" "tenet-platform (product symlink target)"
     else
         echo -e "${RED}ERROR: Could not resolve product symlink target${NC}"
         FAILURES=$((FAILURES + 1))

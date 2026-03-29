@@ -1,6 +1,6 @@
 ---
 name: end
-description: End the current JFL session gracefully with automatic merge and cleanup
+description: End the current TENET session gracefully with automatic merge and cleanup
 triggers:
   - done
   - that's it
@@ -13,7 +13,7 @@ triggers:
 
 # /end - Session Reconciliation
 
-End the current JFL session gracefully with work preservation, conflict resolution, and handoff visibility.
+End the current TENET session gracefully with work preservation, conflict resolution, and handoff visibility.
 
 ---
 
@@ -133,7 +133,7 @@ Before executing cleanup, gather complete session state. This informs what to sh
 
 ```bash
 # Read worktree state
-WORKTREE_PATH=$(cat .jfl/current-worktree.txt 2>/dev/null || echo "")
+WORKTREE_PATH=$(cat .tenet/current-worktree.txt 2>/dev/null || echo "")
 
 if [[ "$WORKTREE_PATH" == "direct" ]]; then
     MODE="direct"
@@ -150,7 +150,7 @@ fi
 **What this tells you:**
 - `direct` → Single session, working on branch directly
 - `worktree` → Multiple concurrent sessions, isolated worktree
-- `none` → Not in a JFL session (shouldn't happen, but handle gracefully)
+- `none` → Not in a TENET session (shouldn't happen, but handle gracefully)
 
 ### Step 1.5: Detect Service Context
 
@@ -158,21 +158,21 @@ After detecting session mode, check if running in a service:
 
 ```bash
 # Read config to detect environment
-CONFIG_TYPE=$(jq -r '.type // "unknown"' .jfl/config.json 2>/dev/null)
+CONFIG_TYPE=$(jq -r '.type // "unknown"' .tenet/config.json 2>/dev/null)
 
 if [[ "$CONFIG_TYPE" == "service" ]]; then
     # Running in a service
-    GTM_PARENT=$(jq -r '.gtm_parent // empty' .jfl/config.json)
+    GTM_PARENT=$(jq -r '.gtm_parent // empty' .tenet/config.json)
 
     if [[ -z "$GTM_PARENT" ]]; then
         echo "⚠️  Service not linked to GTM workspace"
         echo ""
         echo "This service can still be cleaned up, but changes won't sync to a GTM."
-        echo "To link: cd <gtm> && jfl services register $(pwd)"
+        echo "To link: cd <gtm> && tenet services register $(pwd)"
         echo ""
     fi
 
-    SERVICE_NAME=$(jq -r '.name' .jfl/config.json)
+    SERVICE_NAME=$(jq -r '.name' .tenet/config.json)
     SYNC_TO_GTM=true
     echo "📡 Service context detected: $SERVICE_NAME"
     echo "   GTM parent: $GTM_PARENT"
@@ -197,7 +197,7 @@ if [[ "$SYNC_TO_GTM" == "true" ]]; then
     echo "🔍 Validating service configuration..."
 
     # Run validation (non-blocking, just show warnings)
-    if jfl services validate --json > /tmp/validation-result.json 2>/dev/null; then
+    if tenet services validate --json > /tmp/validation-result.json 2>/dev/null; then
         # Parse results
         ERRORS=$(jq -r '.summary.errors' /tmp/validation-result.json)
         WARNINGS=$(jq -r '.summary.warnings' /tmp/validation-result.json)
@@ -205,15 +205,15 @@ if [[ "$SYNC_TO_GTM" == "true" ]]; then
         if [[ "$ERRORS" -gt 0 ]]; then
             echo "⚠️  Service validation found $ERRORS error(s)"
             echo ""
-            echo "Run 'jfl services validate' to see details"
-            echo "Run 'jfl services validate --fix' to auto-repair"
+            echo "Run 'tenet services validate' to see details"
+            echo "Run 'tenet services validate --fix' to auto-repair"
             echo ""
 
             # Ask if they want to fix before ending
             read -p "Auto-fix issues now? (y/N) " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
-                jfl services validate --fix
+                tenet services validate --fix
             fi
         elif [[ "$WARNINGS" -gt 0 ]]; then
             echo "✓ Validation passed ($WARNINGS warning(s))"
@@ -241,10 +241,10 @@ fi
 
 ```bash
 # Current session branch
-BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
+BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
 
 # Working branch (where session merges to)
-WORKING_BRANCH=$(jq -r '.working_branch // "main"' .jfl/config.json 2>/dev/null || echo "main")
+WORKING_BRANCH=$(jq -r '.working_branch // "main"' .tenet/config.json 2>/dev/null || echo "main")
 
 # Verify session branch format
 if [[ ! "$BRANCH" =~ ^session- ]]; then
@@ -282,7 +282,7 @@ fi
 
 ```bash
 # Session journal file
-JOURNAL_FILE=".jfl/journal/${BRANCH}.jsonl"
+JOURNAL_FILE=".tenet/journal/${BRANCH}.jsonl"
 
 if [[ -s "$JOURNAL_FILE" ]]; then
     JOURNAL_EXISTS=true
@@ -350,7 +350,7 @@ Here's the full pattern to gather all session state:
 echo "Gathering session state..."
 
 # 1. Detect mode
-WORKTREE_PATH=$(cat .jfl/current-worktree.txt 2>/dev/null || echo "")
+WORKTREE_PATH=$(cat .tenet/current-worktree.txt 2>/dev/null || echo "")
 if [[ "$WORKTREE_PATH" == "direct" ]]; then
     MODE="direct"
 elif [[ -n "$WORKTREE_PATH" ]]; then
@@ -360,12 +360,12 @@ else
 fi
 
 # 2. Get branches
-BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
-WORKING_BRANCH=$(jq -r '.working_branch // "main"' .jfl/config.json 2>/dev/null || echo "main")
+BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
+WORKING_BRANCH=$(jq -r '.working_branch // "main"' .tenet/config.json 2>/dev/null || echo "main")
 
 # Verify this is a session
 if [[ ! "$BRANCH" =~ ^session- ]]; then
-    echo "⚠ Not in a JFL session"
+    echo "⚠ Not in a TENET session"
     exit 1
 fi
 
@@ -379,7 +379,7 @@ else
 fi
 
 # 4. Check journal
-JOURNAL_FILE=".jfl/journal/${BRANCH}.jsonl"
+JOURNAL_FILE=".tenet/journal/${BRANCH}.jsonl"
 if [[ -s "$JOURNAL_FILE" ]]; then
     JOURNAL_EXISTS=true
     JOURNAL_ENTRY_COUNT=$(wc -l < "$JOURNAL_FILE" | tr -d ' ')
@@ -504,13 +504,13 @@ if [[ $EXIT_CODE -eq 0 ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo "  Work Summary (${DURATION_HOURS}h ${DURATION_MINUTES}m session)"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    jfl synopsis $((DURATION_HOURS + 1))  # Round up to next hour
+    tenet synopsis $((DURATION_HOURS + 1))  # Round up to next hour
     echo ""
     echo "✓ Session ended successfully"
 else
     echo ""
     echo "⚠ Session cleanup encountered issues"
-    echo "See log: .jfl/logs/session-cleanup.log"
+    echo "See log: .tenet/logs/session-cleanup.log"
 fi
 ```
 
@@ -792,14 +792,14 @@ EXIT_CODE=${PIPESTATUS[0]}
 
 if [[ $EXIT_CODE -ne 0 ]]; then
     # Check if conflicts were the issue
-    if grep -q "Merge conflicts remain" .jfl/logs/session-cleanup.log; then
+    if grep -q "Merge conflicts remain" .tenet/logs/session-cleanup.log; then
         echo ""
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "  Merge Conflicts Detected"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         echo "Conflicts in:"
-        grep "Cannot auto-resolve:" .jfl/logs/session-cleanup.log | sed 's/^.*: /  • /'
+        grep "Cannot auto-resolve:" .tenet/logs/session-cleanup.log | sed 's/^.*: /  • /'
         echo ""
         echo "Your session branch has been preserved: $BRANCH"
         echo ""
@@ -855,7 +855,7 @@ echo "Running pre-flight checks..."
 echo ""
 
 # Detect mode
-WORKTREE_PATH=$(cat .jfl/current-worktree.txt 2>/dev/null || echo "")
+WORKTREE_PATH=$(cat .tenet/current-worktree.txt 2>/dev/null || echo "")
 if [[ "$WORKTREE_PATH" == "direct" ]]; then
     MODE="direct"
 elif [[ -n "$WORKTREE_PATH" ]]; then
@@ -865,12 +865,12 @@ else
 fi
 
 # Get branches
-BRANCH=$(cat .jfl/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
-WORKING_BRANCH=$(jq -r '.working_branch // "main"' .jfl/config.json 2>/dev/null || echo "main")
+BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current 2>/dev/null || echo "")
+WORKING_BRANCH=$(jq -r '.working_branch // "main"' .tenet/config.json 2>/dev/null || echo "main")
 
 # Verify session
 if [[ ! "$BRANCH" =~ ^session- ]]; then
-    echo "⚠ Not in a JFL session (current branch: ${BRANCH:-none})"
+    echo "⚠ Not in a TENET session (current branch: ${BRANCH:-none})"
     echo ""
     echo "You might already be on $WORKING_BRANCH."
     echo "Session branches start with 'session-'."
@@ -889,7 +889,7 @@ else
 fi
 
 # Check journal
-JOURNAL_FILE=".jfl/journal/${BRANCH}.jsonl"
+JOURNAL_FILE=".tenet/journal/${BRANCH}.jsonl"
 if [[ -s "$JOURNAL_FILE" ]]; then
     JOURNAL_EXISTS=true
     JOURNAL_ENTRY_COUNT=$(wc -l < "$JOURNAL_FILE" | tr -d ' ')
@@ -1032,7 +1032,7 @@ if [[ "$JOURNAL_EXISTS" == "false" ]] && [[ $COMMIT_COUNT -gt 0 ]]; then
         TS=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
         FILES=$(git diff --name-only $WORKING_BRANCH..HEAD | jq -R -s -c 'split("\n") | map(select(length > 0))')
 
-        mkdir -p .jfl/journal
+        mkdir -p .tenet/journal
         cat >> "$JOURNAL_FILE" << EOF
 {"v":1,"ts":"$TS","session":"$BRANCH","type":"session-end","status":"complete","title":"$TITLE","summary":"$SUMMARY","files":$FILES}
 EOF
@@ -1062,10 +1062,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Create logs directory
-mkdir -p .jfl/logs
+mkdir -p .tenet/logs
 
 # Run session-cleanup.sh and capture output
-./scripts/session/session-cleanup.sh 2>&1 | tee .jfl/logs/session-cleanup.log | while IFS= read -r line; do
+./scripts/session/session-cleanup.sh 2>&1 | tee .tenet/logs/session-cleanup.log | while IFS= read -r line; do
     # Filter to show only key steps
     if [[ "$line" =~ ^✓ ]] || [[ "$line" =~ ^⚠ ]] || [[ "$line" =~ "Merged" ]] || [[ "$line" =~ "Pushed" ]] || [[ "$line" =~ "Removing" ]] || [[ "$line" =~ "Deleting" ]]; then
         echo "  $line"
@@ -1088,19 +1088,19 @@ if [[ "$SYNC_TO_GTM" == "true" && -n "$GTM_PARENT" ]]; then
         echo "Skipping sync. Session cleaned up locally."
     else
         # Validate it's actually a GTM
-        GTM_TYPE=$(jq -r '.type // empty' "$GTM_PARENT/.jfl/config.json" 2>/dev/null)
+        GTM_TYPE=$(jq -r '.type // empty' "$GTM_PARENT/.tenet/config.json" 2>/dev/null)
         if [[ "$GTM_TYPE" != "gtm" ]]; then
             echo "⚠️  Parent is not a GTM workspace (type: $GTM_TYPE)"
             echo "Skipping sync. Session cleaned up locally."
         else
             # 1. Sync journal entries
-            mkdir -p "$GTM_PARENT/.jfl/journal"
+            mkdir -p "$GTM_PARENT/.tenet/journal"
 
             SYNCED_COUNT=0
-            for journal in .jfl/journal/*.jsonl; do
+            for journal in .tenet/journal/*.jsonl; do
                 if [[ -f "$journal" ]]; then
                     BASENAME=$(basename "$journal")
-                    TARGET="$GTM_PARENT/.jfl/journal/service-${SERVICE_NAME}-${BASENAME}"
+                    TARGET="$GTM_PARENT/.tenet/journal/service-${SERVICE_NAME}-${BASENAME}"
 
                     # Copy journal with preserved permissions
                     cp "$journal" "$TARGET"
@@ -1123,12 +1123,12 @@ if [[ "$SYNC_TO_GTM" == "true" && -n "$GTM_PARENT" ]]; then
                    . + [{"name": $name, "last_sync": $ts}]
                  end
                )' \
-               .jfl/config.json > .jfl/config.json.tmp && \
-               mv .jfl/config.json.tmp .jfl/config.json
+               .tenet/config.json > .tenet/config.json.tmp && \
+               mv .tenet/config.json.tmp .tenet/config.json
 
             # 3. Create sync entry in GTM journal
             GTM_SESSION=$(git branch --show-current 2>/dev/null || echo "main")
-            GTM_JOURNAL=".jfl/journal/${GTM_SESSION}.jsonl"
+            GTM_JOURNAL=".tenet/journal/${GTM_SESSION}.jsonl"
 
             cat >> "$GTM_JOURNAL" << EOF
 {"v":1,"ts":"$TIMESTAMP","session":"$GTM_SESSION","type":"sync","title":"Service sync: $SERVICE_NAME","summary":"Synced $SYNCED_COUNT journal file(s) from $SERVICE_NAME","service":"$SERVICE_NAME","files_synced":$SYNCED_COUNT}
@@ -1149,14 +1149,14 @@ echo ""
 
 if [[ $EXIT_CODE -eq 0 ]]; then
     # Check if merge happened or if conflicts remained
-    if grep -q "Merge conflicts remain" .jfl/logs/session-cleanup.log; then
+    if grep -q "Merge conflicts remain" .tenet/logs/session-cleanup.log; then
         # Conflicts - branch preserved
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo "  Merge Conflicts Detected"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
         echo "Conflicts in:"
-        grep "Cannot auto-resolve:" .jfl/logs/session-cleanup.log | sed 's/^.*: /  • /'
+        grep "Cannot auto-resolve:" .tenet/logs/session-cleanup.log | sed 's/^.*: /  • /'
         echo ""
         echo "Your session branch has been preserved: $BRANCH"
         echo ""
@@ -1201,10 +1201,10 @@ if [[ $EXIT_CODE -eq 0 ]]; then
         fi
 
         # Run synopsis command
-        if command -v jfl >/dev/null 2>&1; then
-            jfl synopsis $SYNOPSIS_HOURS 2>/dev/null || echo "Synopsis not available (jfl command not found or synopsis failed)"
+        if command -v tenet >/dev/null 2>&1; then
+            tenet synopsis $SYNOPSIS_HOURS 2>/dev/null || echo "Synopsis not available (tenet command not found or synopsis failed)"
         else
-            echo "Synopsis not available (jfl command not in PATH)"
+            echo "Synopsis not available (tenet command not in PATH)"
         fi
 
         echo ""
@@ -1215,7 +1215,7 @@ else
     echo "⚠ Session cleanup encountered issues"
     echo ""
     echo "Check the log for details:"
-    echo "  cat .jfl/logs/session-cleanup.log"
+    echo "  cat .tenet/logs/session-cleanup.log"
     echo ""
     echo "Your session branch is preserved: $BRANCH"
     echo "No work has been lost."
@@ -1244,7 +1244,7 @@ fi
 
 **Message:**
 ```
-⚠ Not in a JFL session
+⚠ Not in a TENET session
 
 Current branch: main
 
@@ -1271,7 +1271,7 @@ fi
 ⚠ Session cleanup encountered issues
 
 Check the log for details:
-  cat .jfl/logs/session-cleanup.log
+  cat .tenet/logs/session-cleanup.log
 
 Your session branch is preserved: session-goose-20260210-1430-a1b2c3
 No work has been lost.
@@ -1288,7 +1288,7 @@ Common issues:
 
 **Detection:**
 ```bash
-if grep -q "Push failed" .jfl/logs/session-cleanup.log; then
+if grep -q "Push failed" .tenet/logs/session-cleanup.log; then
     # Push to remote failed
 fi
 ```
@@ -1315,7 +1315,7 @@ Common causes:
 
 **Detection:**
 ```bash
-if ! jfl synopsis $HOURS 2>/dev/null; then
+if ! tenet synopsis $HOURS 2>/dev/null; then
     # Synopsis failed
 fi
 ```
@@ -1323,12 +1323,12 @@ fi
 **Handling:**
 ```bash
 # Don't fail the entire skill if synopsis fails
-jfl synopsis $HOURS 2>/dev/null || echo "Synopsis not available"
+tenet synopsis $HOURS 2>/dev/null || echo "Synopsis not available"
 ```
 
 **Message:**
 ```
-Synopsis not available (jfl command failed)
+Synopsis not available (tenet command failed)
 
 But your session ended successfully:
   ✓ Merged to main
@@ -1363,7 +1363,7 @@ fi
 ⚠ Failed to write journal entry
 
 Possible causes:
-  • .jfl/journal/ directory doesn't exist
+  • .tenet/journal/ directory doesn't exist
   • Permission issue
 
 Session ending anyway (journal is recommended but not required).
@@ -1410,9 +1410,9 @@ echo "  Work Summary (${DURATION_HOURS}h ${DURATION_MINUTES}m session)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Call jfl synopsis command
-if command -v jfl >/dev/null 2>&1; then
-    jfl synopsis $SYNOPSIS_HOURS 2>/dev/null || {
+# Call tenet synopsis command
+if command -v tenet >/dev/null 2>&1; then
+    tenet synopsis $SYNOPSIS_HOURS 2>/dev/null || {
         echo "Synopsis command failed"
         echo ""
         echo "Manual summary:"
@@ -1423,7 +1423,7 @@ if command -v jfl >/dev/null 2>&1; then
         git log --oneline $WORKING_BRANCH..HEAD~10 2>/dev/null | head -10
     }
 else
-    echo "Synopsis not available (jfl not in PATH)"
+    echo "Synopsis not available (tenet not in PATH)"
     echo ""
     echo "Manual summary:"
     echo "  Commits: $COMMIT_COUNT"
@@ -1437,7 +1437,7 @@ fi
 
 ### Fallback if Synopsis Unavailable
 
-If `jfl synopsis` fails, show manual summary:
+If `tenet synopsis` fails, show manual summary:
 
 ```
 Manual summary:
@@ -1467,20 +1467,20 @@ Recent commits:
 - Detects worktree vs direct mode
 - Pre-merge cleanup (removes session metadata)
 - Merges session branch to working branch with `-X ours`
-- Auto-resolves common conflicts (.jfl files, submodules)
+- Auto-resolves common conflicts (.tenet files, submodules)
 - Pushes to remote
 - Removes worktrees and deletes session branches
-- Notifies jfl-services API
+- Notifies tenet-services API
 
 **How skill uses it:**
 - Calls it after pre-flight checks and user prompts
 - Captures output to show key steps
 - Parses exit code and output for error handling
-- Logs full output to `.jfl/logs/session-cleanup.log`
+- Logs full output to `.tenet/logs/session-cleanup.log`
 
 ### 2. Journal System
 
-**Location:** `.jfl/journal/*.jsonl`
+**Location:** `.tenet/journal/*.jsonl`
 
 **Format:** One JSON object per line (JSONL)
 
@@ -1499,7 +1499,7 @@ Recent commits:
 ```
 
 **How skill uses it:**
-- Checks if file exists: `[[ -s ".jfl/journal/${BRANCH}.jsonl" ]]`
+- Checks if file exists: `[[ -s ".tenet/journal/${BRANCH}.jsonl" ]]`
 - Counts entries: `wc -l < "$JOURNAL_FILE"`
 - Warns if missing and offers to create
 - Creates minimal entry if user agrees
@@ -1508,7 +1508,7 @@ Recent commits:
 
 **Location:** `src/commands/synopsis.ts` (TypeScript)
 
-**Usage:** `jfl synopsis [hours] [author]`
+**Usage:** `tenet synopsis [hours] [author]`
 
 **What it returns:**
 - Journal entries from all sessions/worktrees
@@ -1525,7 +1525,7 @@ Recent commits:
 
 ### 4. Session State Files
 
-**Location:** `.jfl/`
+**Location:** `.tenet/`
 
 | File | Purpose |
 |------|---------|
@@ -1541,7 +1541,7 @@ Recent commits:
 
 ### 5. Working Branch Config
 
-**Location:** `.jfl/config.json`
+**Location:** `.tenet/config.json`
 
 **Format:**
 ```json
@@ -1568,7 +1568,7 @@ The skill requires these commands to be available:
 |---------|---------|-------------------|
 | `git` | Version control | **REQUIRED** - skill cannot run |
 | `jq` | JSON parsing | Use sed/awk for simple parsing |
-| `jfl` | Synopsis command | Show manual summary |
+| `tenet` | Synopsis command | Show manual summary |
 | `bash` | Shell execution | **REQUIRED** - skill runs in bash |
 
 **Checking dependencies:**
@@ -1588,9 +1588,9 @@ else
     USE_JQ=true
 fi
 
-# Check jfl (optional)
-if ! command -v jfl >/dev/null 2>&1; then
-    echo "Warning: jfl not found, synopsis unavailable"
+# Check tenet (optional)
+if ! command -v tenet >/dev/null 2>&1; then
+    echo "Warning: tenet not found, synopsis unavailable"
     USE_SYNOPSIS=false
 else
     USE_SYNOPSIS=true
@@ -1602,8 +1602,8 @@ fi
 | File | Purpose | What if Missing |
 |------|---------|----------------|
 | `scripts/session/session-cleanup.sh` | Core cleanup | **CRITICAL** - skill fails |
-| `.jfl/config.json` | Working branch | Use "main" as default |
-| `.jfl/current-session-branch.txt` | Session info | Read from git |
+| `.tenet/config.json` | Working branch | Use "main" as default |
+| `.tenet/current-session-branch.txt` | Session info | Read from git |
 
 ### Testing Checklist
 
@@ -1651,7 +1651,7 @@ Test these scenarios to verify the skill works correctly:
 - [ ] Prompted to write entry
 - [ ] Choose "write entry"
 - [ ] Provide title
-- [ ] Entry created (verified in .jfl/journal/)
+- [ ] Entry created (verified in .tenet/journal/)
 - [ ] Merge proceeds
 
 #### 7. No Journal → Skip

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Auto-commit script for JFL projects
+# Auto-commit script for TENET projects
 # Runs in background, commits changes at specified interval
 #
 # Usage:
@@ -10,17 +10,17 @@
 #   ./scripts/session/auto-commit.sh once              # Run once (for testing)
 #
 # Merges best of:
-# - Original JFL auto-commit (smart messages, author detection, pull first)
+# - Original TENET auto-commit (smart messages, author detection, pull first)
 # - Session protection (push after, product handling, faster interval)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Use current working directory (where script is called from), not script location
 REPO_DIR="$(pwd)"
-PID_FILE="$REPO_DIR/.jfl/auto-commit.pid"
-LOG_FILE="$REPO_DIR/.jfl/auto-commit.log"
+PID_FILE="$REPO_DIR/.tenet/auto-commit.pid"
+LOG_FILE="$REPO_DIR/.tenet/auto-commit.log"
 INTERVAL=${2:-120}  # Default 2 minutes (was 5 in original)
 
-mkdir -p "$REPO_DIR/.jfl"
+mkdir -p "$REPO_DIR/.tenet"
 cd "$REPO_DIR" || exit 1
 
 # Critical paths to always include
@@ -30,8 +30,8 @@ CRITICAL_PATHS=(
     "content/"
     "suggestions/"
     "CLAUDE.md"
-    ".jfl/journal/"
-    ".jfl/config.json"
+    ".tenet/journal/"
+    ".tenet/config.json"
 )
 
 do_commit() {
@@ -82,12 +82,12 @@ do_commit() {
 
 # Commit and push changes in ALL submodules with feature branches
 commit_submodules_if_changes() {
-    local submodules_dir="$REPO_DIR/.jfl/submodules"
+    local submodules_dir="$REPO_DIR/.tenet/submodules"
 
     # If no submodules directory, fall back to legacy product-only handling
     if [[ ! -d "$submodules_dir" ]]; then
         # Legacy: check for product-branch file
-        local product_branch_file="$REPO_DIR/.jfl/product-branch"
+        local product_branch_file="$REPO_DIR/.tenet/product-branch"
         if [[ -f "$product_branch_file" ]]; then
             commit_single_submodule "product" "$(cat "$product_branch_file")"
         fi
@@ -281,7 +281,7 @@ case "${1:-}" in
         run_once
         ;;
     *)
-        echo "Auto-commit for JFL projects"
+        echo "Auto-commit for TENET projects"
         echo ""
         echo "Usage:"
         echo "  $0 start [INTERVAL]  Start daemon (default: 120s)"

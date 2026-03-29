@@ -2,7 +2,7 @@
 #
 # migrate-to-branch-sessions.sh - Migrate from worktree-based to branch-based sessions
 #
-# This script helps existing JFL users migrate to the new simplified session model.
+# This script helps existing TENET users migrate to the new simplified session model.
 # It handles:
 # - Saving uncommitted work from worktrees
 # - Merging session branches to main
@@ -27,7 +27,7 @@ NC='\033[0m'
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  JFL Migration: Worktree → Branch-Based Sessions"
+echo "  TENET Migration: Worktree → Branch-Based Sessions"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "This will migrate your project from worktree-based sessions to"
@@ -164,8 +164,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Remove worktree metadata files
-rm -f "$REPO_DIR/.jfl/current-worktree.txt" 2>/dev/null || true
-rm -f "$REPO_DIR/.jfl/worktree-path.txt" 2>/dev/null || true
+rm -f "$REPO_DIR/.tenet/current-worktree.txt" 2>/dev/null || true
+rm -f "$REPO_DIR/.tenet/worktree-path.txt" 2>/dev/null || true
 
 echo -e "${GREEN}✓${NC} Metadata cleaned up"
 

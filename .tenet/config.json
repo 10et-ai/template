@@ -1,10 +1,10 @@
 {
-  "name": "jfl-template",
+  "name": "tenet-template",
   "type": "service",
   "setup": "",
   "product_repo": "",
   "product_path": "product/",
-  "description": "JFL Template - starter template repo for new JFL projects",
+  "description": "TENET Template - starter template repo for new TENET projects",
   "team": {
     "owner": {
       "name": "",
@@ -28,7 +28,7 @@
   },
   "environments": {
     "development": {
-      "code_path": "/Users/alectaggart/CascadeProjects/jfl-template",
+      "code_path": "/Users/alectaggart/CascadeProjects/tenet-template",
       "start_command": "echo 'No start command configured'",
       "port": null,
       "env": {

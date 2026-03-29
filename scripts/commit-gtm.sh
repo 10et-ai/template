@@ -34,7 +34,7 @@ git status --short | grep -v "^M. product" | grep -v "^M. runner" || true
 echo ""
 
 # Stage all changes except submodules (product, runner, etc.)
-git add knowledge/ content/ suggestions/ previews/ CLAUDE.md .jfl/ scripts/ .gitmodules 2>/dev/null || true
+git add knowledge/ content/ suggestions/ previews/ CLAUDE.md .tenet/ scripts/ .gitmodules 2>/dev/null || true
 
 # Use pathspec exclusion to ensure no submodules are staged
 git reset HEAD product/ runner/ 2>/dev/null || true

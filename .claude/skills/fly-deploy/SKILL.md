@@ -40,16 +40,16 @@ Shows current deployment status:
 JFL PLATFORM - FLY.IO STATUS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-App: jfl-platform
+App: tenet-platform
 Region: sjc (San Jose)
-URL: https://jfl-platform.fly.dev
+URL: https://tenet-platform.fly.dev
 
 MACHINES
   ✓ 78d40e1a - running (sjc)
   ✓ 90e3f7a4 - running (sjc)
 
 DATABASE
-  ✓ jfl-platform-db - running
+  ✓ tenet-platform-db - running
   Postgres 15
   Primary: sjc
 
@@ -100,7 +100,7 @@ flyctl status --json
 
 **Example output:**
 ```
-Deploying jfl-platform...
+Deploying tenet-platform...
 
 Commit: a4a4dfd "auto: session save"
 Branch: main
@@ -120,7 +120,7 @@ Health checks...
 DEPLOYED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-https://jfl-platform.fly.dev
+https://tenet-platform.fly.dev
 
 Want me to:
 - Open the URL in your browser?
@@ -152,7 +152,7 @@ flyctl logs --machine 78d40e1a
 **Example output:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-LOGS - jfl-platform
+LOGS - tenet-platform
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 2026-01-19T18:45:23Z [info] ✓ Ready in 1204ms
@@ -191,7 +191,7 @@ flyctl secrets import < .env
 **Example output:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-SECRETS - jfl-platform
+SECRETS - tenet-platform
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 AUTH_SECRET                     Set 2d ago
@@ -276,25 +276,25 @@ Database management:
 **Implementation:**
 ```bash
 # Database status
-flyctl postgres db show jfl-platform-db
+flyctl postgres db show tenet-platform-db
 
 # Connect via psql
-flyctl postgres connect -a jfl-platform-db
+flyctl postgres connect -a tenet-platform-db
 
 # List backups
-flyctl volumes list -a jfl-platform-db
+flyctl volumes list -a tenet-platform-db
 ```
 
 **For migrations, use the app context:**
 ```bash
 # SSH into app machine and run migrations
-flyctl ssh console -a jfl-platform -C "npx prisma migrate deploy"
+flyctl ssh console -a tenet-platform -C "npx prisma migrate deploy"
 ```
 
 **Example output:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DATABASE - jfl-platform-db
+DATABASE - tenet-platform-db
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Type: Postgres 15
@@ -302,7 +302,7 @@ Region: sjc (primary)
 Storage: 10GB (2.3GB used)
 
 CONNECTION
-  Internal: jfl-platform-db.flycast
+  Internal: tenet-platform-db.flycast
   Port: 5432
 
 BACKUPS
@@ -373,7 +373,7 @@ Check application health:
 flyctl status --json
 
 # Check health endpoint
-curl https://jfl-platform.fly.dev/api/health
+curl https://tenet-platform.fly.dev/api/health
 
 # Recent errors
 flyctl logs --lines 100 | grep -i error
@@ -382,7 +382,7 @@ flyctl logs --lines 100 | grep -i error
 **Example output:**
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-HEALTH CHECK - jfl-platform
+HEALTH CHECK - tenet-platform
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✓ HTTP health endpoint    200 OK (45ms)
@@ -456,10 +456,10 @@ flyctl apps list
 flyctl postgres list
 
 # Destroy app (requires confirmation)
-flyctl apps destroy jfl-platform
+flyctl apps destroy tenet-platform
 
 # Destroy database (requires confirmation)
-flyctl postgres destroy jfl-platform-db
+flyctl postgres destroy tenet-platform-db
 ```
 
 **Example:**
@@ -467,8 +467,8 @@ flyctl postgres destroy jfl-platform-db
 ⚠️  DANGER ZONE
 
 This will permanently destroy:
-  - App: jfl-platform (2 machines)
-  - Database: jfl-platform-db (Postgres 15, 10GB)
+  - App: tenet-platform (2 machines)
+  - Database: tenet-platform-db (Postgres 15, 10GB)
   - All data (Users, Projects, Deployments, etc.)
 
 This cannot be undone.
@@ -479,9 +479,9 @@ Create a database backup first? (yes/no)
 
 Creating backup... ✓
 
-To confirm, type the app name: jfl-platform
+To confirm, type the app name: tenet-platform
 
-> jfl-platform
+> tenet-platform
 
 Destroying resources...
   ✓ App destroyed
@@ -540,7 +540,7 @@ Want me to:
 ### Auto-detect from fly.toml
 
 ```toml
-app = 'jfl-platform'
+app = 'tenet-platform'
 primary_region = 'sjc'
 ```
 
@@ -554,7 +554,7 @@ primary_region = 'sjc'
 ```bash
 # Check for attached Postgres
 flyctl postgres list
-flyctl postgres db show -a jfl-platform-db
+flyctl postgres db show -a tenet-platform-db
 ```
 
 ### Multi-App Detection
@@ -564,9 +564,9 @@ If multiple fly.toml files exist (monorepo):
 ```
 Multiple Fly apps detected:
 
-1. jfl-platform (./platform)
-2. jfl-api (./api)
-3. jfl-worker (./worker)
+1. tenet-platform (./platform)
+2. tenet-api (./api)
+3. tenet-worker (./worker)
 
 Which app? (1-3, or 'all')
 ```
@@ -596,7 +596,7 @@ After any operation, guide the user:
 Deployed successfully!
 
 Next steps:
-- Test the deployment: https://jfl-platform.fly.dev
+- Test the deployment: https://tenet-platform.fly.dev
 - Watch logs: /fly-deploy logs --follow
 - Check health: /fly-deploy health
 ```

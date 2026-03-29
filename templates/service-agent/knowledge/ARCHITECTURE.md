@@ -21,7 +21,7 @@
 │   └── ...
 ├── public/               # Static assets (if web)
 ├── tests/                # Test files
-├── .jfl/                 # JFL service agent files
+├── .tenet/                 # TENET service agent files
 ├── knowledge/            # Service documentation
 └── package.json          # Dependencies
 ```
