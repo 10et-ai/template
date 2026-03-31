@@ -181,7 +181,7 @@ Ralph TUI is bundled with TENET CLI:
 
 ```bash
 # Install TENET (includes ralph-tui)
-npm install -g 10et
+npm install -g @10et/cli
 
 # Use ralph via tenet
 tenet ralph run --prd ./tasks/feature.json
