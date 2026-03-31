@@ -1,75 +1,42 @@
-# TENET Template
+<p align="center">
+  <img src="https://10et.ai/favicon.svg" width="48" height="48" alt="TENET">
+</p>
 
-Starter template for new TENET GTM workspaces. Used by `tenet init` to scaffold new projects.
+<h1 align="center">TENET Template</h1>
+<p align="center">Starter template for new TENET workspaces. Used by <code>tenet init</code>.</p>
+
+---
 
 ## What This Is
 
-This repo is the canonical template that gets cloned when running `tenet init -n my-project`. It includes:
+This repo is cloned when you run `tenet init -n my-project`. It includes:
 
-- Pre-configured `.claude/settings.json` with session hooks (SessionStart, PostToolUse, UserPromptSubmit, Stop, PreCompact)
-- `.mcp.json` for Context Hub MCP server integration
-- Knowledge doc templates (`knowledge/VISION.md`, `NARRATIVE.md`, `THESIS.md`, `ROADMAP.md`, etc.)
-- Brand doc templates (`BRAND_BRIEF.md`, `BRAND_DECISIONS.md`, `VOICE_AND_TONE.md`)
-- Session management scripts (`scripts/session/`)
-- CRM CLI wrapper
-- `CLAUDE.md` with full AI instructions
-- `.tenet/config.json` base configuration
+- **CLAUDE.md** — Agent instructions, journal protocol, session management
+- **Skills** — Brand architect, content creator, search, spec, startup, and more
+- **Scripts** — Session init/cleanup, auto-commit, doctor, sync
+- **Knowledge templates** — VISION, THESIS, NARRATIVE, ARCHITECTURE, RUNBOOK
+- **Config** — `.tenet/config.json`, `.mcp.json`, Claude Code hooks
 
 ## Structure
 
 ```
-tenet-template/
-├── .claude/
-│   ├── settings.json          # Claude Code hooks
-│   ├── service-settings.json  # Lighter-weight hooks for service agents
-│   ├── agents/                # Service agent definitions (scaffolded empty)
-│   └── skills/                # Pre-installed slash commands
-├── .tenet/
-│   ├── config.json            # Project configuration
-│   ├── journal/               # Session journal entries
-│   └── logs/                  # Session logs
-├── .mcp.json                  # Context Hub MCP config
-├── CLAUDE.md                  # AI instructions (main artifact)
-├── knowledge/                 # Strategy docs (templates)
-│   ├── VISION.md
-│   ├── NARRATIVE.md
-│   ├── THESIS.md
-│   ├── ROADMAP.md
-│   ├── BRAND_BRIEF.md
-│   ├── BRAND_DECISIONS.md
-│   ├── VOICE_AND_TONE.md
-│   ├── SERVICE_SPEC.md
-│   ├── ARCHITECTURE.md
-│   ├── DEPLOYMENT.md
-│   └── RUNBOOK.md
-├── content/                   # Generated marketing content
-├── journal/                   # Journal entries (non-session use)
-├── previews/                  # Asset previews
-├── suggestions/               # Per-contributor workspaces
-├── scripts/
-│   └── session/               # Session management scripts
-├── templates/                 # Doc templates for reference
-└── crm                        # CRM CLI (Google Sheets)
+├── .tenet/config.json        — Project configuration
+├── .mcp.json                 — MCP server config (tenet-context-hub)
+├── .claude/settings.json     — Session hooks and journal enforcement
+├── CLAUDE.md                 — Agent instructions
+├── knowledge/                — Living documents
+├── scripts/session/          — Session lifecycle scripts
+└── templates/                — Sub-templates (service agents, brand, etc.)
 ```
 
-## How It Gets Used
+## How It Works
 
-1. User runs `tenet init -n my-project`
-2. CLI clones this template into `./my-project`
-3. Replaces placeholder values in config
-4. User starts working — `claude` fires SessionStart hooks automatically
+1. `tenet init -n my-project` clones this repo
+2. Customizes `.tenet/config.json` with project name and owner
+3. Result: a fully configured TENET workspace
 
-## Updating the Template
-
-Changes here propagate to new projects only. Existing projects update via `tenet update` which pulls skills, scripts, and templates while preserving user content.
-
-## Related Repos
-
-| Repo | Purpose |
-|------|---------|
-| [tenet-cli](https://github.com/402goose/tenet-cli) | CLI tool that uses this template |
-| tenet-platform | Hosted platform (dashboard, auth, billing) |
+Existing projects update via `tenet update` (refreshes skills, scripts, CLAUDE.md).
 
 ## License
 
-MIT License
+MIT
