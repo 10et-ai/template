@@ -120,7 +120,7 @@ Product repos are registered via `tenet onboard <path|url>` and accessed through
 | `knowledge/BRAND_DECISIONS.md` | Finalized brand choices |
 | `knowledge/TASKS.md` | Master task list |
 
-Use `jfl_context` / `mcp__tenet-context__context_get` to get these — don't read files individually.
+Use `tenet_context` / `mcp__tenet-context__context_get` to get these — don't read files individually.
 
 ---
 
@@ -130,11 +130,11 @@ Both runtimes expose the same capabilities under different names:
 
 | Capability | Claude Code MCP | Pi tool |
 |------------|-----------------|---------|
-| Get project context | `mcp__tenet-context__context_get` | `jfl_context` |
-| Search past work | `mcp__tenet-context__memory_search` | `jfl_memory_search` |
-| Add memory | `mcp__tenet-context__memory_add` | `jfl_memory_add` |
-| Project dashboard | `/hud` skill | `jfl_hud` |
-| Publish event | `mcp__tenet-context__events_publish` | `jfl_publish_event` |
+| Get project context | `mcp__tenet-context__context_get` | `tenet_context` |
+| Search past work | `mcp__tenet-context__memory_search` | `tenet_memory_search` |
+| Add memory | `mcp__tenet-context__memory_add` | `tenet_memory_add` |
+| Project dashboard | `/hud` skill | `tenet_hud` |
+| Publish event | `mcp__tenet-context__events_publish` | `tenet_publish_event` |
 
 ---
 
