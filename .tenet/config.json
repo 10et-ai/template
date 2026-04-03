@@ -1,52 +1,6 @@
 {
-  "name": "tenet-template",
-  "type": "service",
-  "setup": "",
-  "product_repo": "",
-  "product_path": "product/",
-  "description": "TENET Template - starter template repo for new TENET projects",
-  "team": {
-    "owner": {
-      "name": "",
-      "github": "",
-      "x402": ""
-    },
-    "core": [],
-    "contributors": []
-  },
-  "crm": {
-    "type": "",
-    "config": {}
-  },
-  "service_type": "library",
-  "gtm_parent": "/Users/alectaggart/CascadeProjects/JFL-GTM",
+  "name": "",
+  "type": "gtm",
   "working_branch": "main",
-  "sync_to_parent": {
-    "journal": true,
-    "knowledge": false,
-    "content": false
-  },
-  "environments": {
-    "development": {
-      "code_path": "/Users/alectaggart/CascadeProjects/tenet-template",
-      "start_command": "echo 'No start command configured'",
-      "port": null,
-      "env": {
-        "NODE_ENV": "development"
-      },
-      "health_check": null
-    }
-  },
-  "context_scope": {
-    "produces": [
-      "template:schema-change",
-      "template:config-change"
-    ],
-    "consumes": [
-      "cli:api-change",
-      "cli:template-api",
-      "cli:command-change"
-    ],
-    "denied": []
-  }
+  "description": ""
 }
