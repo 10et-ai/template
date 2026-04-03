@@ -18,6 +18,22 @@ WORKTREES_DIR="$REPO_DIR/worktrees"
 
 cd "$REPO_DIR" || exit 1
 
+# ==============================================================================
+# Step -1: Ensure git is ready (fresh projects may have no commits)
+# ==============================================================================
+
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo "  No git repo — initializing..."
+    git init
+fi
+
+if ! git rev-parse HEAD >/dev/null 2>&1; then
+    echo "  No commits — creating initial commit..."
+    git add -A 2>/dev/null || true
+    git commit --allow-empty -m "initial commit" --no-verify 2>/dev/null || \
+        git -c user.name="tenet" -c user.email="tenet@10et.ai" commit --allow-empty -m "initial commit" --no-verify 2>/dev/null || true
+fi
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
