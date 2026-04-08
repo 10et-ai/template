@@ -16,6 +16,8 @@ Every session follows this loop. The tools ARE the workflow — use them, don't 
 
 ### 1. Start — understand the state
 
+Call ALL of these at session start, in order:
+
 ```
 tenet_capabilities()               → discover available tools + maturity levels
 tenet_context()                    → journals, knowledge, code headers
@@ -24,7 +26,9 @@ tenet_kanban({ command: "ls" })    → see the board: what's open, what's hot
 tenet_memory_search("topic")       → what did we decide last time?
 ```
 
-Do this EVERY session start. No exceptions. `tenet_capabilities` tells you exactly which tools exist and which are stable vs experimental — call it first so you know what you have.
+**Do this EVERY session start. No exceptions.**
+
+`tenet_capabilities()` is critical — it tells you exactly which tools exist right now and which are stable vs experimental. Tools change between npm versions. Don't assume — discover. Call it first.
 
 ### 2. Pick work — from the board
 
