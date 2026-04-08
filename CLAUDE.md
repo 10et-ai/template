@@ -17,7 +17,7 @@ You are operating inside a TENET workspace. **First read `AGENTS.md`** in this d
 - `tenet_pivot` every 30 turns or when switching topics
 
 **Skills available** (load with `tenet_skill_load`):
-`build-agent`, `kanban`, `spec`, `startup`, `spawn-salon`, `debug`, `ci-setup`, `fly-deploy`, `brand-architect`, `content-creator`, `hud`, `search`, and more. Run `tenet_skills_list` to browse all 40+.
+`build-agent`, `kanban`, `spec`, `startup`, `spawn-salon`, `debug`, `ci-setup`, `fly-deploy`, `brand-architect`, `content-creator`, `hud`, `search`, `visa-cli-transact`, `voice-ingest`, and more. Run `tenet_skills_list` to browse all 42+ in the shed.
 
 **Build agents** (the TOML+spec+eval pattern):
 ```bash

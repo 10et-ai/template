@@ -11,7 +11,7 @@ You are running inside **Pi** (`@mariozechner/pi-coding-agent`), the tenet agent
 - All kanban labels use `tenet/` prefix
 - Use `tenet brief` for 5-line org status, `tenet hud` for full dashboard
 
-When fixing tenet CLI bugs, edit `~/CascadeProjects/jfl-cli/packages/pi/extensions/*.ts` and rebuild with `cd packages/pi && npm run build`.
+When fixing tenet CLI bugs, the source lives in the **`10et-ai/cli`** repo at `packages/pi/extensions/*.ts`. Clone that repo anywhere on disk (e.g. `git clone git@github.com:10et-ai/cli.git`), fix there, rebuild with `cd packages/pi && npm run build`, then `npm publish` from the repo root. **Never edit a per-workspace copy** — those are consumers of `@10et/cli`, not the source.
 
 ## Session Protocol
 
@@ -59,36 +59,109 @@ tenet_memory_search("topic")
 - `tenet_pivot` every 30 turns or when switching topics
 - `tenet_context` to reload project state after compaction
 
+## Workspace Topology — governance vs service vs portfolio
+
+TENET workspaces separate **governance** (tenets) from **code** (services). Every workspace is one of three types, declared in `.tenet/config.json`:
+
+| Type | Suffix | Contains | Example |
+|------|--------|----------|---------|
+| **Tenet** (governance) | `-gtm` | specs, policies, knowledge, reviews, roadmaps, journals | `visa-cyber-gtm`, `tenet-gtm` |
+| **Service** (code) | bare name | `package.json`, `src/`, tests, CI, Dockerfile | `visa-cyber`, `10et-ai/cli`, `10et-ai/platform` |
+| **Portfolio** (aggregator) | varies | registers children in `scopes[]`, no code of its own | `visa-crypto-labs`, `10et` |
+
+**Rules this implies:**
+1. When you're in a `-gtm` workspace, the **code for that product lives in a sibling repo**. Don't edit source files from a governance workspace — clone the service repo separately and work there. The governance workspace journals the decision and links to the service PR.
+2. When you're in a service workspace, read the parent tenet's `knowledge/` docs for product context. The service repo should not carry its own vision/strategy — that lives upstream in the `-gtm` tenet.
+3. A portfolio workspace has no code or `src/`. It exists to roll up metrics, route dispatches, and federate trust across its children listed in `scopes`.
+4. **The `@10et/cli` source is a service repo** (`10et-ai/cli`). Bugs in Pi extensions, CLI commands, or bundled skills are fixed THERE and shipped via `npm publish`. Workspaces consume the published package; they never patch it in place.
+
+Look at `.tenet/config.json` → `type` + `parent_slug` + `scopes` to confirm which role the current workspace plays before deciding where changes go.
+
 ## Key Files
 
 | File | What |
 |------|------|
-| `CLAUDE.md` | Full detailed instructions (read for deep context) |
+| `AGENTS.md` | **This file — canonical runtime protocol** |
+| `CLAUDE.md` | Claude Code wrapper (points here) |
 | `knowledge/VISION.md` | What this workspace is building and why |
 | `knowledge/ARCHITECTURE.md` | System design (if code workspace) |
 | `knowledge/TOPOLOGY.md` | Service/dependency graph (if complex system) |
-| `.tenet/journal/` | Session journals (JSONL) |
-| `.tenet/config.json` | Project config — parent_slug, owner, scopes, trust_policy |
+| `.tenet/journal/` | Session journals (JSONL, one per session) |
+| `.tenet/config.json` | `type`, `parent_slug`, `owner`, `scopes`, `trust_policy` |
 | `.tenet/recipes/` | Runnable sequential pipelines (build-cycle, ai-redteam, etc.) |
+| `specs/` | Product specs, agent specs, RFCs |
 
 ## Available Tools
 
-- **tenet_journal_write** — WRITE AFTER EVERY SIGNIFICANT ACTION
-- **tenet_memory_add** — persist insights (use type `teacup` for aha moments)
-- **tenet_memory_search** — find past decisions before making new ones
-- **tenet_context** — project context, journal entries, knowledge docs
-- **tenet_hud** — project dashboard
-- **tenet_skill_load** — load a skill before doing work
-- **tenet_skill_match** — find the right skill for a task
-- **tenet_skills_list** — browse what skills are available
-- **tenet_pivot** — checkpoint work mid-session
-- **tenet_eval_status** — eval scores and trends
-- **tenet_synopsis** — summarize recent work
-- **tenet_capabilities** — query what tenet can do (stable/beta/experimental)
-- **tenet_events_publish** / **tenet_events_recent** — MAP event bus
-- **tenet_training_buffer** / **tenet_policy_rank** — RL policy head
-- **delegate** — run a build agent via `tenet build --run` (thin shellout, single process)
-- **subway_send** / **subway_call** / **subway_broadcast** — P2P agent mesh
+All tools are Pi extensions registered by `@10et/cli` — available in every tenet workspace. Do not ask the user which to call; detect intent and invoke silently.
+
+### Context & project state
+- **tenet_context** — unified context: journals, knowledge, code headers (call at session start)
+- **tenet_hud** — full project dashboard (metrics, phase, pipeline, next action)
+- **tenet_context_status** — Context Hub health (semantic index, memory, sources)
+- **tenet_context_sessions** — see what other sessions/agents are working on
+- **tenet_capabilities** — query stable/beta/experimental features
+- **tenet_synopsis** — summarize recent work across sessions
+
+### Journal — MANDATORY after every significant action
+- **tenet_journal_write** — structured entry: feature | decision | fix | discovery | milestone
+- **tenet_pivot** — checkpoint mid-session (commit + handoff entry, stays on branch)
+
+### Memory — search before deciding, capture after learning
+- **tenet_memory_search** — find past decisions, features, learnings
+- **tenet_memory_add** — persist insights (use type `teacup` for the concrete moment before an aha)
+- **tenet_memory_status** — memory index health
+- **tenet_remember** — save a cross-workspace preference/learning about how the user works
+- **tenet_experiment_history** — search past experiments and their outcomes
+
+### Skills — load before improvising
+- **tenet_skill_match** — match a task description to relevant skills + recipes
+- **tenet_skill_load** — pull a skill into the current session (the skill IS the orchestrator)
+- **tenet_skills_list** — browse available skills (42+ in the shed)
+- **tenet_skills_status** — usage stats, success rate, learnings count per skill
+- **tenet_skills_depth** — how deeply a skill is being used (sections, checklists, anti-patterns)
+- **tenet_preset_create** — package the current workspace into a reusable template
+
+### Kanban & CRM
+- **tenet_crm** — query/update CRM pipeline (contacts, deals) via Google Sheets
+- Kanban is `gh` CLI against issue labels: `tenet/backlog`, `tenet/in-progress`, `tenet/done`
+
+### Eval, RL & training
+- **tenet_eval_status** — latest eval scores and trends
+- **tenet_eval_compare** — diff two eval snapshots
+- **tenet_policy_score** — score one candidate action via the RL policy head
+- **tenet_policy_rank** — rank multiple candidate actions by predicted reward
+- **tenet_training_buffer** — record a (state, action, reward) tuple for policy training
+- **tenet_mine_tuples** — extract training tuples from journals/flows/sessions/evals
+
+### Events (MAP bus)
+- **tenet_events_publish** — fire an event (`task:completed`, `eval:scored`, custom)
+- **tenet_events_recent** — inspect recent bus events (filter by type prefix)
+
+### Services — onboarding repos + querying them
+
+Service repos are registered in a workspace via `tenet onboard <path-or-git-url>`. This creates a skill file at `.claude/skills/<service-name>/SKILL.md` with `type: service` frontmatter including the `service_path` (local clone path). Pi reads that directory at session start and dynamically registers `tenet_service` with the correct `service` enum for THIS workspace.
+
+- **tenet_service** — query any registered service: `status` (git branch + last commit), `logs` (recent commits), `recent` (24h changes), `health` (package.json info), `start`/`stop`/`restart`. The available `service` values are whatever has been onboarded in THIS workspace — run `ls .claude/skills/` to see them, or call `tenet_service` and the schema will list them.
+- **How to find a service's code**: check `.claude/skills/<name>/SKILL.md` → `service_path` field — that's the absolute path to the cloned repo on disk.
+- **How to onboard a new service**: `tenet onboard git@github.com:10et-ai/<repo>.git` or `tenet onboard ../relative/path`. Creates the skill, clones if needed, adds to `.tenet/config.json` scopes.
+- **To run a build agent**: `tenet build --run <agent-name>` via Bash (no dedicated Pi tool — the delegator was removed in v1.11.1).
+
+### Paid transactions (Visa CLI → fal.ai / Suno / Allium, Touch ID required)
+- **tenet_transact_status** — enrollment + daily spend (free, no Touch ID)
+- **tenet_transact_image** — fal.ai image (~$0.04–0.06)
+- **tenet_transact_music** — Suno track (~$0.10)
+- **tenet_transact_price** — real-time token price via Allium (~$0.02)
+- **tenet_transact_run** — auto-decompose a prompt into a cart, execute atomically
+
+### Subway P2P mesh (agent ↔ agent)
+- **subway_resolve** / **subway_send** / **subway_call** / **subway_inbox** — direct messaging + RPC
+- **subway_subscribe** / **subway_unsubscribe** / **subway_broadcast** — pub/sub topics
+- **subway_rpc_respond** — reply to an inbound RPC call (use the `correlation_id` from the call)
+
+### Pi built-ins (always available)
+- **Read** / **Write** / **Edit** — files (prefer Edit for surgical changes)
+- **Bash** — shell commands (use for `ls`, `grep`, `find`, `gh`, `git`, `npm`)
 
 ## Rules
 
