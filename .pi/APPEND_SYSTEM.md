@@ -1,122 +1,107 @@
-# TENET — Session Protocol (Pi)
+# TENET Pi Session — Behavioral Protocol
 
-> You are running inside **Pi** (`@mariozechner/pi-coding-agent`).
-> Tools are pre-registered. Call them. Don't narrate. Don't plan out loud then do nothing.
-> Image paths sent by user → `read` tool immediately. Never say "can't read images".
+## THE RULE: Use tools. Don't narrate using them.
 
----
-
-## Session Start Checklist (do these silently on first turn)
-
-```
-tenet_context()                          # project state, journals, knowledge
-tenet_capabilities()                     # discover what tools exist + maturity
-tenet_memory_search("session start")     # what was left from last session
-```
-
-Then show the board:
-```
-bash: tenet kanban ls                    # open issues by priority
-```
+If you're explaining what tool to call instead of calling it — STOP and call it.
 
 ---
 
-## Tools — Use These, Not Bash
+## Session Start (do this, in order, every time)
 
-### Context & Memory
-| Call | When |
-|------|------|
-| `tenet_context()` | Session start + after compaction |
-| `tenet_capabilities()` | Unsure if a feature/tool exists |
-| `tenet_memory_search("topic")` | BEFORE any decision or implementation |
-| `tenet_memory_add({ type: "teacup", ... })` | When you understand WHY — write the concrete thing you saw, not the conclusion |
-| `tenet_hud()` | Project dashboard — timeline, phase, pipeline |
-
-### Skills
 ```
-tenet_skill_match("what you want to do")   # ALWAYS before doing work manually
-tenet_skill_load("skill-name")             # load it — the skill IS the orchestrator
-```
-Key skills: `kanban`, `build-agent`, `spec`, `eval`, `debug`, `observe-ci`, `spawn-salon`, `ci-setup`
-
-### Journal — MANDATORY
-Write AFTER every significant action. Target 8-16 entries/session.
-```
-tenet_journal_write({ type: "fix",       title: "...", summary: "..." })
-tenet_journal_write({ type: "feature",   title: "...", summary: "..." })
-tenet_journal_write({ type: "decision",  title: "...", summary: "..." })
-tenet_journal_write({ type: "discovery", title: "...", summary: "..." })
-```
-If you haven't journaled in 10 turns, you're behind.
-
-### Kanban
-Load the skill first: `tenet_skill_load("kanban")`
-
-The kanban skill tells you exactly how to use issues. Short version:
-```bash
-# See board
-tenet kanban ls
-
-# File issue (targets the right service repo automatically)  
-tenet kanban add "title" --priority P0 --area infra --service tenet-cli
-
-# Claim + work
-tenet kanban pick N
-
-# Close
-tenet kanban done N    # creates PR with Closes #N
+1. tenet_capabilities()            → discover ALL registered tools right now
+2. tenet_context()                 → project state, journal, knowledge
+3. tenet_kanban({ command: "ls" }) → see the board, pick what to work on
 ```
 
-**Never use raw `gh issue create` — use `tenet kanban add` so service routing works.**
-
-### Services — Always Target the Right Repo
-```
-tenet_service({ service: "tenet-cli",      command: "status" })  # 10et-ai/cli
-tenet_service({ service: "tenet-platform", command: "status" })  # 10et-ai/platform  
-tenet_service({ service: "tenet-template", command: "status" })  # 10et-ai/template
-```
-When filing issues or PRs: check which service owns the code, target that repo.
-Services are defined in `.tenet/config.json` → `registered_services`.
-
-### Transactions (Touch ID required)
-```
-visa_transact_image({ prompt: "..." })    # generate image ~$0.04-0.06
-visa_transact_music({ prompt: "..." })    # generate music ~$0.10
-visa_transact_status()                    # check spend + enrollment
-```
-Never use `tenet_transact_*` — renamed to `visa_transact_*`.
-
-### Build Agents (complex multi-file work)
-```
-tenet_skill_load("build-agent")
-# skill handles: issue → spec → eval → TOML → baseline → dispatch → converge → PR
-```
+`tenet_capabilities()` is the source of truth for what tools exist. 
+The tool list in any .md file goes stale. The capabilities response never does.
+Skill shed tools, new Pi extensions, visa_transact_* — all show up here live.
 
 ---
 
-## Behavioral Rules
+## Per Task (every single time)
 
-1. **Search memory before deciding** — `tenet_memory_search("topic")`
-2. **Load skill before doing manually** — `tenet_skill_match` → `tenet_skill_load`
-3. **Journal after every significant action** — not at end of session, AS YOU GO
-4. **Teacup the moment of insight** — write WHAT YOU WERE LOOKING AT, not the conclusion
-5. **Target services, not hardcoded paths** — code goes to the right repo via service model
-6. **Checkpoint every 30 turns** — `tenet_pivot()`
-7. **Read images immediately** — `read({ path: "/path/to/image.jpg" })` when user shares path
+```
+tenet_skill_match("what you want to do")  → finds relevant skills + recipes
+tenet_skill_load("skill-name")            → loads it — the skill IS the orchestrator
+```
 
----
-
-## Git
-- Sessions stay on `main` — build agents create feature branches
-- Commit format: `fix: description (Closes #N)`
-- Auto-commit every 5 min covers `.tenet/`, `knowledge/`, `.pi/`, `AGENTS.md`
+Skills live in the shed (10et-ai/skills). As new skills are published they are 
+auto-discovered via `tenet_skill_match` — you never need to know skill names in advance.
+Never improvise what a skill should tell you to do — load it first.
+Never use gh CLI, bash scripts, or raw git when a Pi tool exists for the job.
 
 ---
 
-## Claude Code Users
-If you are running in Claude Code (not Pi), this file still applies except:
-- Tools like `tenet_journal_write`, `tenet_memory_search` etc. are MCP tools
-- Run `tenet mcp` to see registered MCP tools
-- `tenet kanban` CLI works the same
-- Build agents: `tenet build --run <name>` from terminal
-- See `.claude/skills/` for skill files (equivalent to Pi skill shed)
+## Always On (non-negotiable)
+
+| Trigger | Action |
+|---------|--------|
+| Completed anything significant | `tenet_journal_write` — NOW, not at session end |
+| Making any decision | `tenet_memory_search("topic")` first — avoid repeat work |
+| Understood WHY something works | `tenet_memory_add` type=`teacup` — the specific thing you were looking at, not the conclusion |
+| Filing/working issues | `tenet_kanban` tool — not `gh issue create` directly |
+| Every 30 turns or topic switch | `tenet_pivot` — checkpoint so context survives |
+| User shares image path | `read` tool immediately — never say "can't read images" |
+| Need to know what tools exist | `tenet_capabilities()` — never from memory |
+| Need to know what skills exist | `tenet_skill_match("task")` — never from memory |
+| Working on multi-issue sprint | `tenet_skill_load("build-agent")` → full spec→eval→PR cycle |
+
+---
+
+## Services — Working Across Repos (never hardcode)
+
+Services are registered in `.tenet/config.json → registered_services`.
+Read the registry — never hardcode repo names or paths.
+
+```
+tenet_service({ service: "<name>", command: "status" })  → health check
+tenet_service({ service: "<name>", command: "logs" })    → recent commits
+```
+
+When filing issues or creating PRs for a service, route to its repo:
+```
+tenet_kanban({ command: "add", args: "fix X --service <name> --label P0,area:infra" })
+```
+
+The `--service` flag reads the registry to find the right GitHub repo.
+This works for tenet-cli, tenet-platform, tenet-template, and any service 
+users register with `tenet onboard` or `tenet service add`.
+
+---
+
+## Kanban Loop
+
+```
+tenet_kanban({ command: "ls" })               → see backlog
+tenet_kanban({ command: "pick", args: "N" })  → claim issue, move to in-progress
+  ... work using Pi tools ...
+tenet_kanban({ command: "done", args: "N" })  → close + open PR
+```
+
+Labels that exist: P0/P1/P2/P3, agent-ready, area:*, scope:*, tenet/in-progress, tenet/done
+For multi-issue sprints: `tenet_skill_load("build-agent")` → spec→eval→agent→PR loop.
+
+---
+
+## Reading Images
+
+When the user sends an image path (screenshot, diagram, photo):
+```
+read({ path: "/path/to/image.jpg" })
+```
+Images are sent as attachments and rendered in the TUI. Always read immediately.
+
+---
+
+## What NOT to do
+
+- Don't list tools from memory — call `tenet_capabilities()`
+- Don't list skills from memory — call `tenet_skill_match()`  
+- Don't use `gh issue create` directly — use `tenet_kanban`
+- Don't hardcode service names — read `.tenet/config.json`
+- Don't commit directly to main — issues get branches, PRs go through trust gate
+- Don't skip journaling — 8-16 entries per session minimum
+- Don't plan for 5 messages then not execute — 1 plan, then go
+- Don't say "can't read images" — use the `read` tool on the path
