@@ -1,95 +1,97 @@
-# TENET Workspace — Multiplayer AI
+# TENET — Agent Protocol
 
-## Runtime
+You're in **Pi** (`@mariozechner/pi-coding-agent`). Tools are registered. Use them directly.
 
-You're in **Pi** (`@mariozechner/pi-coding-agent`), the tenet agent runtime.
-- Tools are registered by extensions — you can see them in tool definitions. Use them directly.
-- Skills: `tenet_skill_match("task")` → `tenet_skill_load("name")`. The skill IS the orchestrator.
-- Services come from `.tenet/config.json` → `registered_services`. Never hardcode repo names.
+## Session Start — DO FIRST
 
-## Session Start
+1. `tenet_context()` — get journals, knowledge, project state
+2. `tenet_kanban({ command: "ls" })` — see the board
+3. `tenet_memory_search("session start")` — what happened last time
+4. Start working. No ceremony.
 
-```
-tenet_context()                    → project state, journals, knowledge
-tenet_kanban({ command: "ls" })    → see the board (aggregates all service repos)
-tenet_memory_search("session")     → what happened last time?
-```
+## Auto-Invoke — MANDATORY
 
-Then start working. That's it.
+Detect intent silently. Never ask the user to name tools.
 
-## Skill Loading
+| User says / does | You silently do |
+|------------------|-----------------|
+| Describes a bug or idea | `tenet_kanban({ command: "add", args: '"Title" --priority N' })` — file it, confirm inline, keep going |
+| "What did we decide about X?" | `tenet_memory_search("X")` with type=decision |
+| "When did we build Y?" | `tenet_memory_search("Y")` with type=feature |
+| "What's on the board?" | `tenet_kanban({ command: "ls" })` |
+| "Work on the top issue" | `tenet_kanban({ command: "pick" })` |
+| Asks about past work | `tenet_memory_search("topic")` |
+| Sends an image path | `read(path)` immediately — never say "can't read images" |
+| Starts a new kind of task | `tenet_skill_match("task description")` → `tenet_skill_load("name")` |
+| Asks about project state | `tenet_context()` or `tenet_hud()` |
 
-Before doing any non-trivial task, find the right skill:
-```
-tenet_skill_match("what you want to do")   → ranked skill matches
-tenet_skill_load("skill-name")             → loads SKILL.md into context
-```
+## Journal — MANDATORY
 
-Don't improvise what a skill handles. Load it first. Follow it.
-Skills auto-discover from the shed — you don't need to know names in advance.
-
-## Journal — MANDATORY (8-16 entries/session)
-
-Write entries AS YOU WORK. After each significant action, not at session end.
+Write entries AS YOU WORK. Not at session end. After each significant action.
 
 | Event | Type |
 |-------|------|
-| Feature completed | `feature` |
-| Decision made | `decision` |
-| Bug fixed | `fix` |
-| Something learned | `discovery` |
-| Milestone reached | `milestone` |
+| Feature completed | `tenet_journal_write({ type: "feature", ... })` |
+| Decision made | `tenet_journal_write({ type: "decision", ... })` |
+| Bug fixed | `tenet_journal_write({ type: "fix", ... })` |
+| Something learned | `tenet_journal_write({ type: "discovery", ... })` |
+| Milestone reached | `tenet_journal_write({ type: "milestone", ... })` |
 
-If you've done 3 things and written 0 entries — stop and write them NOW.
+Target: 8-16 entries per session. If you've done 3 things and written 0 entries, stop and write them NOW.
 
 ## Kanban — Use the Tool
 
 ```
-tenet_kanban({ command: "ls" })                                           → board (all repos)
-tenet_kanban({ command: "add", args: '"Title" --priority 80 --scope X' }) → create issue
-tenet_kanban({ command: "pick" })                                         → claim top issue
-tenet_kanban({ command: "move", args: "123 in_progress" })                → transition
-tenet_kanban({ command: "done", args: "123" })                            → complete
+tenet_kanban({ command: "ls" })                                        — see board
+tenet_kanban({ command: "add", args: '"Title" --priority 80' })        — create issue
+tenet_kanban({ command: "pick" })                                      — claim top issue
+tenet_kanban({ command: "move", args: "123 in_progress" })             — transition
+tenet_kanban({ command: "done", args: "123" })                         — complete
 ```
 
-`--scope` routes to the right service repo. Service names come from `.tenet/config.json`.
-Never use `gh issue create/list` directly. Never hardcode repo names.
+Issues route to repos via `--scope <service>`. Service names come from `.tenet/config.json` → `registered_services`. Never hardcode repo names.
 
-**Auto-backlog**: when user describes a bug or idea → file it immediately with `tenet_kanban add`, confirm inline, keep going. Don't ask "should I file this?"
+When user describes a bug or idea → file it immediately. Don't ask "should I file this?" Just do it, confirm inline: `Filed #N: <title>`, keep going.
+
+## Skills — From the Shed
+
+Skills live in the shed (40+). Find them dynamically:
+
+```
+tenet_skill_match("what you want to do")   — find relevant skills
+tenet_skill_load("skill-name")             — load it into context
+```
+
+**Load skills BEFORE improvising.** The skill IS the orchestrator — follow it.
+Don't hardcode skill names. `tenet_skill_match` always reflects current shed state.
 
 ## Memory — Search Before Deciding
 
 ```
-tenet_memory_search("topic")       → before any decision or implementation
-tenet_memory_add(type: "teacup")   → capture the concrete moment before an insight
-tenet_remember("user prefers X")   → cross-workspace preference
+tenet_memory_search("topic")                                    — before ANY decision
+tenet_memory_add({ type: "insight", title: "...", content: "..." })  — persist learnings
+tenet_memory_add({ type: "teacup", title: "...", content: "..." })   — the concrete moment before an aha
+tenet_remember({ summary: "user prefers X" })                   — cross-workspace preference
 ```
 
-## Ceremony Matching
+**Teacup**: capture the specific thing you were looking at when understanding arrived — the file, the line, the detail. Not the conclusion. The door back to the insight.
 
-| Situation | What to do |
-|-----------|-----------|
-| User says "fix this" | Just fix it + journal. No kanban overhead. |
-| Multi-step autonomous work | Full kanban: pick → work → journal → done |
-| Unknown scope / blocked | `needs-context` label, ask user |
-| Every ~30 turns | `tenet_pivot({ summary: "..." })` — checkpoint |
+## Services
 
-## Rules (non-negotiable)
+Services are in `.tenet/config.json` → `registered_services`. Check them:
+
+```
+tenet_service({ service: "tenet-cli", command: "status" })     — git info
+tenet_service({ service: "tenet-cli", command: "recent" })     — last 24h
+```
+
+## Rules
 
 1. **Journal every significant action** — 8-16 entries/session
-2. **Use `tenet_kanban`** for issues — never raw `gh` CLI
+2. **Use `tenet_kanban` for issues** — never `gh issue create`
 3. **Search memory before deciding** — `tenet_memory_search`
 4. **Load skills before improvising** — `tenet_skill_match` → `tenet_skill_load`
-5. **Checkpoint** with `tenet_pivot` every ~30 turns
-6. **Match ceremony to task** — quick fix = just do it; multi-step = kanban flow
-7. **Epistemic honesty** — say when you don't know, use `epistemic-boundary` label
-8. **Image paths from user** → `read` tool immediately, never say "can't read images"
-
-## Key Files
-
-| File | What |
-|------|------|
-| `AGENTS.md` | This file — canonical runtime protocol |
-| `knowledge/VISION.md` | What this workspace is building |
-| `.tenet/config.json` | Workspace type, registered services, trust policy |
-| `.tenet/journal/` | Session journals (JSONL) |
+5. **Auto-file issues** — user mentions bug/idea → file it, don't ask
+6. **Every code file needs `@purpose` header**
+7. **Checkpoint with `tenet_pivot`** every ~30 turns
+8. **Be honest** — say when you don't know, label with `needs-context`
