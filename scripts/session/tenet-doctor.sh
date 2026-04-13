@@ -308,9 +308,9 @@ cleanup_stale_session() {
         rm -f "$SESSIONS_DIR/$session_name.json"
     fi
 
-    # Remove from tenet-services session tracking
-    if command -v curl >/dev/null 2>&1; then
-        curl -s -X DELETE "http://localhost:3401/sessions/$session_name" >/dev/null 2>&1 || true
+    # Unregister from session lock registry
+    if command -v tenet >/dev/null 2>&1; then
+        tenet session unregister "$session_name" 2>/dev/null || true
     fi
 
     FIXED=$((FIXED + 1))

@@ -196,6 +196,9 @@ start_daemon() {
         # Track parent process to detect when Claude dies
         INITIAL_PPID=$PPID
 
+        # Get session ID for heartbeat
+        SESSION_ID=$(cat "$REPO_DIR/.tenet/current-session-branch.txt" 2>/dev/null || git -C "$REPO_DIR" branch --show-current 2>/dev/null || echo "")
+
         while true; do
             {
                 # Check if parent process (Claude) is still alive
@@ -207,6 +210,15 @@ start_daemon() {
                 echo "[$(date '+%H:%M:%S')] Checking for changes..."
                 do_commit
                 commit_submodules_if_changes
+
+                # Heartbeat session lock file so other sessions can detect us as alive
+                if [[ -n "$SESSION_ID" ]]; then
+                    LOCK_FILE="$REPO_DIR/.tenet/sessions/${SESSION_ID}.lock"
+                    if [[ -f "$LOCK_FILE" ]]; then
+                        TEMP=$(mktemp)
+                        jq --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '.heartbeat = $ts' "$LOCK_FILE" > "$TEMP" 2>/dev/null && mv "$TEMP" "$LOCK_FILE" || rm -f "$TEMP"
+                    fi
+                fi
             } >> "$LOG_FILE" 2>&1
             sleep "$INTERVAL"
         done

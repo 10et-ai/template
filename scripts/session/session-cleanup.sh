@@ -129,9 +129,9 @@ cd "$MAIN_REPO"
 if ! git checkout "$WORKING_BRANCH" 2>/dev/null; then
   echo "⚠ Could not checkout $WORKING_BRANCH, skipping merge"
   echo "  Session branch $BRANCH preserved for manual merge"
-  # Notify tenet-services that session ended
-  if command -v curl >/dev/null 2>&1; then
-    curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
+  # Unregister session from lock registry
+  if command -v tenet >/dev/null 2>&1; then
+    tenet session unregister "$BRANCH" 2>/dev/null || true
   fi
   exit 0
 fi
@@ -182,9 +182,9 @@ if [ $MERGE_STATUS -eq 0 ]; then
 
   echo "✓ Session cleanup complete - merged to $WORKING_BRANCH and pushed"
 
-  # Notify tenet-services that session ended
-  if command -v curl >/dev/null 2>&1; then
-    curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
+  # Unregister session from lock registry
+  if command -v tenet >/dev/null 2>&1; then
+    tenet session unregister "$BRANCH" 2>/dev/null || true
   fi
 else
   # Merge failed - try auto-resolving common conflicts
@@ -306,9 +306,9 @@ else
 
     echo "✓ Session cleanup complete - merged to $WORKING_BRANCH and pushed"
 
-    # Notify tenet-services that session ended
-    if command -v curl >/dev/null 2>&1; then
-      curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
+    # Unregister session from lock registry
+    if command -v tenet >/dev/null 2>&1; then
+      tenet session unregister "$BRANCH" 2>/dev/null || true
     fi
   else
     # Still have unresolved conflicts
@@ -318,16 +318,16 @@ else
     git diff --name-only --diff-filter=U 2>/dev/null | sed 's/^/    - /'
     git merge --abort 2>/dev/null || true
 
-    # Notify tenet-services that session ended (even though we kept the branch)
-    if command -v curl >/dev/null 2>&1; then
-      curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
+    # Unregister session even though we kept the branch
+    if command -v tenet >/dev/null 2>&1; then
+      tenet session unregister "$BRANCH" 2>/dev/null || true
     fi
   fi
 fi
 
-# Final notification to tenet-services (in case we skipped merge paths)
-if command -v curl >/dev/null 2>&1; then
-  curl -s -X DELETE "http://localhost:3401/sessions/$BRANCH" >/dev/null 2>&1 || true
+# Final unregister (in case we skipped merge paths)
+if command -v tenet >/dev/null 2>&1; then
+  tenet session unregister "$BRANCH" 2>/dev/null || true
 fi
 
 exit 0

@@ -233,41 +233,25 @@ if [[ -z "$working_branch" ]]; then
     working_branch=$(git branch --show-current)
 fi
 
-# Check for concurrent sessions via tenet-services API
+# Check for concurrent sessions via file-based lock registry
 use_worktree=false
-api_response=""
-if command -v curl >/dev/null 2>&1; then
-    api_response=$(curl -s -X GET "http://localhost:3401/sessions/active?projectPath=$(pwd)" 2>/dev/null || echo "")
+if command -v tenet >/dev/null 2>&1; then
+    session_json=$(tenet session check --json 2>/dev/null || echo '{"active":0}')
+    session_count=$(echo "$session_json" | jq -r '.active // 0' 2>/dev/null || echo "0")
 
-    if [[ -n "$api_response" ]] && echo "$api_response" | jq -e '.count' >/dev/null 2>&1; then
-        session_count=$(echo "$api_response" | jq -r '.count // 0')
-
-        if [[ $session_count -gt 0 ]]; then
-            use_worktree=true
-            echo -e "${YELLOW}→${NC}  Multiple sessions detected ($session_count active) - using worktree for isolation"
-        else
-            echo -e "${GREEN}→${NC}  Single session - working directly on branch $working_branch"
-        fi
+    if [[ $session_count -gt 0 ]]; then
+        use_worktree=true
+        echo -e "${YELLOW}→${NC}  $session_count active session(s) detected — using worktree for isolation"
     else
-        # API unavailable - fall back to local detection
-        echo -e "${YELLOW}→${NC}  tenet-services unavailable - checking locally..."
-        local_sessions=$(ps aux | grep -c "claude.*$(pwd)" 2>/dev/null || echo "1")
-        if [[ $local_sessions -gt 2 ]]; then
-            use_worktree=true
-            echo -e "${YELLOW}→${NC}  Multiple processes detected - using worktree for isolation"
-        fi
+        echo -e "${GREEN}→${NC}  Single session — working directly on branch $working_branch"
     fi
 else
-    # No curl - assume single session
     echo -e "${GREEN}→${NC}  Working directly on branch $working_branch"
 fi
 
-# Register this session with tenet-services
-if command -v curl >/dev/null 2>&1; then
-    curl -s -X POST "http://localhost:3401/sessions/start" \
-        -H "Content-Type: application/json" \
-        -d "{\"id\":\"$session_name\",\"projectPath\":\"$(pwd)\",\"branch\":\"$working_branch\",\"user\":\"$user\",\"pid\":$$,\"worktree\":\"$use_worktree\"}" \
-        >/dev/null 2>&1 || true
+# Register this session with local lock registry
+if command -v tenet >/dev/null 2>&1; then
+    tenet session register "$session_name" --branch "$working_branch" --user "$user" 2>/dev/null || true
 fi
 
 # ==============================================================================
