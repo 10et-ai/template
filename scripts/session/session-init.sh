@@ -42,6 +42,52 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # ==============================================================================
+# FAST PATH: Skip heavy work on compaction resume
+# ==============================================================================
+# If a session was registered recently by the same user, this is a compaction
+# resume — not a fresh start. Skip git sync, branching, and reconciliation.
+
+SESSION_BRANCH_FILE="$REPO_DIR/.tenet/current-session-branch.txt"
+FAST_PATH=false
+
+if [[ -f "$SESSION_BRANCH_FILE" ]]; then
+    existing_branch=$(cat "$SESSION_BRANCH_FILE" 2>/dev/null)
+    if [[ -n "$existing_branch" ]]; then
+        # Check if this session file was written recently (< 8 hours)
+        if [[ "$(uname)" == "Darwin" ]]; then
+            file_age_s=$(( $(date +%s) - $(stat -f %m "$SESSION_BRANCH_FILE" 2>/dev/null || echo 0) ))
+        else
+            file_age_s=$(( $(date +%s) - $(stat -c %Y "$SESSION_BRANCH_FILE" 2>/dev/null || echo 0) ))
+        fi
+
+        if [[ $file_age_s -lt 28800 ]]; then
+            # Session is recent — verify the branch still exists
+            if git rev-parse --verify "$existing_branch" >/dev/null 2>&1; then
+                FAST_PATH=true
+            fi
+        fi
+    fi
+fi
+
+if [[ "$FAST_PATH" == "true" ]]; then
+    echo ""
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "  TENET Session Resume (fast path)"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo ""
+    echo -e "${GREEN}✓${NC}  Resuming session: $existing_branch"
+
+    # Ensure we're on the right branch
+    current=$(git branch --show-current 2>/dev/null)
+    if [[ "$current" != "$existing_branch" ]]; then
+        git checkout "$existing_branch" 2>/dev/null || true
+    fi
+
+    echo -e "${GREEN}✓${NC}  Session ready on branch: $existing_branch"
+    exit 0
+fi
+
+# ==============================================================================
 # Step 0: Sync repos to latest (prevent context loss)
 # ==============================================================================
 
@@ -213,6 +259,56 @@ if [[ -d "$WORKTREES_DIR" ]]; then
                 ;;
         esac
     fi
+fi
+
+# ==============================================================================
+# Step 2.8: Prune orphan session branches (crash recovery)
+# ==============================================================================
+# Sessions that crash/kill -9 leave branches behind because Stop hook never fires.
+# Clean up merged branches and old unmerged ones (>7 days) that aren't active.
+
+orphan_count=0
+pruned_count=0
+
+for branch in $(git branch --list 'session-*' | tr -d ' *'); do
+    # Skip current branch
+    if [[ "$branch" == "$(git branch --show-current)" ]]; then
+        continue
+    fi
+
+    # Skip branches with active PIDs (check lock registry)
+    lock_file="$REPO_DIR/.tenet/sessions/${branch}.lock"
+    if [[ -f "$lock_file" ]]; then
+        lock_pid=$(jq -r '.pid // 0' "$lock_file" 2>/dev/null || echo "0")
+        if [[ "$lock_pid" -gt 0 ]] && kill -0 "$lock_pid" 2>/dev/null; then
+            continue
+        fi
+        # Stale lock — remove it
+        rm -f "$lock_file" "${lock_file}.flock" 2>/dev/null
+    fi
+
+    orphan_count=$((orphan_count + 1))
+
+    # Check if branch is already merged into working branch
+    if git merge-base --is-ancestor "$branch" HEAD 2>/dev/null; then
+        git branch -d "$branch" 2>/dev/null && pruned_count=$((pruned_count + 1))
+        continue
+    fi
+
+    # Check branch age — prune unmerged branches older than 7 days
+    branch_date=$(git log -1 --format="%ct" "$branch" 2>/dev/null || echo "0")
+    now_ts=$(date +%s)
+    age_days=$(( (now_ts - branch_date) / 86400 ))
+    if [[ $age_days -gt 7 ]]; then
+        echo -e "${YELLOW}→${NC}  Pruning old session branch: $branch ($age_days days old)"
+        git branch -D "$branch" 2>/dev/null && pruned_count=$((pruned_count + 1))
+    fi
+done
+
+if [[ $pruned_count -gt 0 ]]; then
+    echo -e "${GREEN}✓${NC}  Pruned $pruned_count orphan session branches ($((orphan_count - pruned_count)) remaining)"
+elif [[ $orphan_count -gt 0 ]]; then
+    echo -e "${YELLOW}⚠${NC}  $orphan_count orphan session branches (< 7 days old, keeping)"
 fi
 
 # ==============================================================================
