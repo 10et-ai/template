@@ -1,10 +1,10 @@
 # TENET Workspace
 
-## Runtime
+## Runtime: Pi (not Claude Code)
 
-This workspace supports both **Claude Code** and **Pi** (`@mariozechner/pi-coding-agent`).
-- In **Claude Code**: tools are MCP servers (defined in `.mcp.json`). Read `CLAUDE.md` for tool names.
-- In **Pi**: tools are Pi extensions. Skills load from the shed.
+You are running inside **Pi** (`@mariozechner/pi-coding-agent`), not Claude Code.
+- Tools are Pi extensions — NOT MCP servers, NOT `.claude/settings.json`
+- Skills load from the shed: `tenet_skill_load("name")`
 - Build agents run via `tenet build --run <agent>`
 - All labels use `tenet/` prefix
 
