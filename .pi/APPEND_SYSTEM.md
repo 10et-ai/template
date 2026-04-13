@@ -6,17 +6,16 @@ If you're explaining what tool to call instead of calling it — STOP and call i
 
 ---
 
-## Session Start (do this, in order, every time)
+## Session Start — the steer already loaded your context
 
-```
-1. tenet_capabilities()            → discover ALL registered tools right now
-2. tenet_context()                 → project state, journal, knowledge
-3. tenet_kanban({ command: "ls" }) → see the board, pick what to work on
-```
+The startup briefing (steer message) already provides: recent work, scorecard, dashboard, team activity, hub state, open PRs, and suggested next actions. **Do NOT re-fetch with tool calls.**
 
-`tenet_capabilities()` is the source of truth for what tools exist. 
-The tool list in any .md file goes stale. The capabilities response never does.
-Skill shed tools, new Pi extensions, visa_transact_* — all show up here live.
+**Wait for the user to type, then respond directly.** No startup tool calls.
+
+Call tools only when:
+- The user asks for something specific ("show the board" → `tenet_kanban(ls)`)
+- You need fresh data mid-session
+- You're searching memory for a specific decision
 
 ---
 

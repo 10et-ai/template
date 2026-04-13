@@ -2,10 +2,7 @@
   "mcpServers": {
     "tenet-context": {
       "command": "tenet-context-hub-mcp",
-      "args": [],
-      "env": {
-        "CONTEXT_HUB_URL": "http://localhost:4200"
-      }
+      "args": []
     }
   }
 }

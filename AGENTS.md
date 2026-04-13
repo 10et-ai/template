@@ -8,69 +8,92 @@ You are running inside **Pi** (`@mariozechner/pi-coding-agent`), not Claude Code
 - Build agents run via `tenet build --run <agent>`
 - All labels use `tenet/` prefix
 
-When fixing extension bugs, rebuild: `cd <extension-dir> && npm run build`.
+## THE RULE: Use tools. Don't narrate using them.
 
-## How to Work
+If you're explaining what tool to call instead of calling it — STOP and call it.
 
-**Just work.** Code lives across repos — `cd` wherever you need to go. Service paths are in `.tenet/config.json`. Fix things where they live, journal decisions here.
-
-**Journal as you go.** Not at the end — as it happens:
-
-| Event | Do |
-|-------|-----|
-| Made a decision | `tenet_journal_write` type=decision |
-| Fixed something | `tenet_journal_write` type=fix |
-| Learned something | `tenet_journal_write` type=discovery |
-| Shipped a feature | `tenet_journal_write` type=feature |
-| Hit a milestone | `tenet_journal_write` type=milestone |
-
-**Teacup moments** — when you understand WHY something works (or doesn't), capture via `tenet_memory_add` with type `teacup`. Write the specific concrete thing you were looking at — the file, the line, the exact detail. NOT the conclusion. The door back to the insight.
-
-**Search memory before deciding.** `tenet_memory_search("topic")` — someone may have already solved this or decided against it.
-
-**Create issues as you find them.** See a bug while fixing something else? `gh issue create`. Don't stop — file it and keep going.
-
-## Issue Flow
-
-Issues live in this workspace. Work happens wherever the code is.
+## 1. Session Start — do this every time
 
 ```
-See problem → gh issue create --label "tenet/backlog,P2"
-             (add P0/P1 if urgent, agent-ready if clear enough for build agents)
-
-Backlog fills up → categorize, dependency graph, prioritize
-                  → knock them out or run build agents
-
-Pick work → gh issue edit N --add-label "tenet/in-progress"
-Do work   → cd to whatever repo, fix it, commit with "Closes #N"
-Done      → gh issue close N
+tenet_context()                    → journals, knowledge, project state
+tenet_memory_search("topic")       → what did we decide last time?
 ```
 
-One backlog. The issue describes what's wrong, the agent figures out where to fix it.
+Do both at session start. No exceptions.
 
-## Skills & Build Agents
+## 2. Journal AS you go — not at session end
 
-Match task → load skill → follow it:
+After EVERY significant action, write an entry. **NOW**, not later.
+
+| Event | Call |
+|-------|------|
+| Feature completed | `tenet_journal_write({ type: "feature", title: "...", summary: "..." })` |
+| Decision made | `tenet_journal_write({ type: "decision", title: "...", summary: "..." })` |
+| Bug fixed | `tenet_journal_write({ type: "fix", title: "...", summary: "..." })` |
+| Something learned | `tenet_journal_write({ type: "discovery", title: "...", summary: "..." })` |
+| Milestone reached | `tenet_journal_write({ type: "milestone", title: "...", summary: "..." })` |
+
+**Target: 8-16 entries/session.** If you've done 3 significant things and written 0 entries — stop and write them NOW.
+
+## 3. Remember — capture insights, search before deciding
+
 ```
-tenet_skill_match("what you want to do")
-tenet_skill_load("skill-name")
+tenet_memory_search("topic")                                           → find prior decisions first
+tenet_memory_add({ title: "...", content: "...", type: "insight" })    → persist what you learned
+tenet_memory_add({ title: "...", content: "...", type: "teacup" })     → the door back to an aha moment
 ```
 
-For batching work — spec → eval → run: `tenet_skill_load("build-agent")`
+**Teacup moments**: when you understand WHY something works, capture the specific concrete thing you were looking at — the file, the line, the exact detail. NOT the conclusion. The door back to the insight.
+
+## 4. Issues — file immediately, never ask
+
+```
+tenet_file_issue({ title: "...", priority: "P2" })
+```
+
+Confirm inline: `Filed #N: <title>` — one line. Keep flowing.
+
+- P0/P1 if urgent. P2 default. Add `labels: "agent-ready"` if a build agent could pick it up.
+- Issues always go in **this GTM repo**, even when the fix is in a registered service.
+- Cross-repo close: `Closes <org>/<service-repo>#N` in PR description.
+
+## 5. Skills — load when the task needs one
+
+For **deploy, spec, debug, browser, CI, recipes** → load the skill first:
+```
+tenet_skill_match("what you want to do")   → finds the right skill
+tenet_skill_load("skill-name")             → loads it — the skill IS the orchestrator
+```
+
+For **journal, memory, issue filing, quick fixes** → just do it directly. No skill load needed.
+
+**Common mappings:**
+- Web search / URL → `tenet_skill_load("agent-browser")`
+- Writing a spec → `tenet_skill_load("spec")`
+- Deploying → `tenet_skill_load("fly-deploy")`
+
+## 6. Checkpoint every ~30 turns
+
+```
+tenet_pivot({ summary: "what I was doing" })
+```
+
+## Available Tools
+
+- **tenet_file_issue** — file backlog issues (compact, one themed line)
+- **tenet_journal_write** — write after every significant action
+- **tenet_memory_add** — persist insights (`type: "teacup"` for aha moments)
+- **tenet_memory_search** — find past decisions before making new ones
+- **tenet_context** — project context, journals, knowledge docs
+- **tenet_skill_load** — load a skill before substantial work
+- **tenet_skill_match** — find the right skill when unsure
+- **tenet_pivot** — checkpoint every ~30 turns
+- **tenet_capabilities** — discover all registered tools (source of truth)
 
 ## Rules
 
-1. **Journal every significant action** — as it happens, not at session end
-2. **Load skills before doing work manually** — the skill IS the orchestrator
-3. **Search memory before deciding** — `tenet_memory_search`
-4. **Work off the board** — pick issues, close them
-5. **Every code file needs `@purpose` header**
-6. **Checkpoint with `tenet_pivot`** every ~30 turns
-
-## Key Files
-
-| File | What |
-|------|------|
-| `AGENTS.md` | This file |
-| `.tenet/config.json` | Service paths, project config |
-| `.tenet/journal/` | Session history |
+1. **Journal every significant action** — 8-16 entries/session, explicit params every time
+2. **Search memory before deciding** — `tenet_memory_search` first, always
+3. **Work off the board** — pick issues, close them
+4. **Every code file needs `@purpose` header**
+5. **One thing per turn** — complete one logical unit, then stop and check in

@@ -154,11 +154,9 @@ graceful_shutdown() {
         commit_submodules_if_changes
     } >> "$LOG_FILE" 2>&1
 
-    # Run session cleanup (auto-merge and remove worktree if safe)
-    if [[ -f "$SCRIPT_DIR/session-cleanup.sh" ]]; then
-        echo "[$(date '+%H:%M:%S')] Running session cleanup..." >> "$LOG_FILE" 2>&1
-        bash "$SCRIPT_DIR/session-cleanup.sh" >> "$LOG_FILE" 2>&1 || true
-    fi
+    # NOTE: Do NOT call session-cleanup.sh here — the Stop hook already calls it.
+    # Calling it from both auto-commit shutdown AND Stop hook causes a double-cleanup
+    # race where two processes try to merge/delete the same branch simultaneously.
 
     echo "[$(date '+%H:%M:%S')] Shutdown complete." >> "$LOG_FILE" 2>&1
     rm -f "$PID_FILE"

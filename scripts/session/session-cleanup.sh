@@ -136,8 +136,9 @@ if ! git checkout "$WORKING_BRANCH" 2>/dev/null; then
   exit 0
 fi
 
-# Attempt merge with auto-resolve for .tenet/ conflicts
-MERGE_OUTPUT=$(git merge --no-edit -X ours "$BRANCH" 2>&1)
+# Attempt merge — no -X ours (that silently discards session changes on conflict)
+# Let conflicts fall through to the auto-resolve path below which handles known patterns
+MERGE_OUTPUT=$(git merge --no-edit "$BRANCH" 2>&1)
 MERGE_STATUS=$?
 
 if [ $MERGE_STATUS -eq 0 ]; then
@@ -196,6 +197,37 @@ else
         # Git conflict artifact - remove it
         echo "  Auto-resolving: $file (removing artifact)"
         git rm -f "$file" 2>/dev/null || true
+        ;;
+      .tenet/journal/*.jsonl)
+        # Journal JSONL — append-only, merge both sides by concatenating
+        echo "  Auto-resolving: $file (merging JSONL entries)"
+        if [ -f "$file" ]; then
+          # Strip conflict markers and keep all JSONL lines from both sides
+          grep -v '^<<<<<<< \|^=======$\|^>>>>>>> ' "$file" > "${file}.merged" 2>/dev/null || true
+          mv "${file}.merged" "$file"
+          git add "$file" 2>/dev/null || true
+        else
+          git checkout --theirs "$file" 2>/dev/null || true
+          git add "$file" 2>/dev/null || true
+        fi
+        ;;
+      .tenet/map-events.jsonl|.tenet/service-events.jsonl|.tenet/skill-usage.jsonl)
+        # Append-only JSONL files — same merge strategy as journals
+        echo "  Auto-resolving: $file (merging JSONL)"
+        if [ -f "$file" ]; then
+          grep -v '^<<<<<<< \|^=======$\|^>>>>>>> ' "$file" > "${file}.merged" 2>/dev/null || true
+          mv "${file}.merged" "$file"
+          git add "$file" 2>/dev/null || true
+        else
+          git checkout --theirs "$file" 2>/dev/null || true
+          git add "$file" 2>/dev/null || true
+        fi
+        ;;
+      .tenet/config.json|.tenet/telemetry-agent-state.json)
+        # Config files — keep session's version (theirs has newer state)
+        echo "  Auto-resolving: $file (keeping session version)"
+        git checkout --theirs "$file" 2>/dev/null || true
+        git add "$file" 2>/dev/null || true
         ;;
       product)
         # Product directory conflict (likely symlink vs dir)
