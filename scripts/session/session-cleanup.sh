@@ -306,6 +306,12 @@ else
 
     echo "✓ Session cleanup complete - merged to $WORKING_BRANCH and pushed"
 
+    # Push journals to cloud (non-blocking)
+    if command -v tenet >/dev/null 2>&1; then
+      tenet sync --push --quiet 2>/dev/null &
+      disown
+    fi
+
     # Unregister session from lock registry
     if command -v tenet >/dev/null 2>&1; then
       tenet session unregister "$BRANCH" 2>/dev/null || true
@@ -317,6 +323,31 @@ else
     echo "  Conflicting files:"
     git diff --name-only --diff-filter=U 2>/dev/null | sed 's/^/    - /'
     git merge --abort 2>/dev/null || true
+
+    # PR escape valve — push branch and create PR so work isn't silently lost
+    if command -v gh >/dev/null 2>&1; then
+      echo "  Creating PR for manual conflict resolution..."
+      git checkout "$BRANCH" 2>/dev/null || true
+      git push origin "$BRANCH" 2>/dev/null || true
+      pr_url=$(gh pr create \
+        --head "$BRANCH" \
+        --base "$WORKING_BRANCH" \
+        --title "session merge: $BRANCH → $WORKING_BRANCH (conflicts)" \
+        --body "$(cat <<PREOF
+Auto-merge failed for session branch \`$BRANCH\`.
+
+**Conflicting files need manual resolution.**
+
+Merge locally:
+\`\`\`bash
+git checkout $WORKING_BRANCH
+git merge $BRANCH
+# resolve conflicts
+git push
+\`\`\`
+PREOF
+)" 2>/dev/null) && echo "  ✓ PR created: $pr_url" || echo "  ⚠ PR creation failed — branch $BRANCH pushed for manual merge"
+    fi
 
     # Unregister session even though we kept the branch
     if command -v tenet >/dev/null 2>&1; then

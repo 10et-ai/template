@@ -104,6 +104,13 @@ if [[ -x "$SCRIPT_DIR/session-sync.sh" ]]; then
     }
 fi
 
+# Pull cloud journals (background, non-blocking — brings in journals from other machines)
+if command -v tenet >/dev/null 2>&1; then
+    mkdir -p .tenet/logs
+    tenet sync --pull --quiet >> .tenet/logs/cloud-sync.log 2>&1 &
+    disown
+fi
+
 # ==============================================================================
 # Step 1: Quick health check (warn only)
 # ==============================================================================
