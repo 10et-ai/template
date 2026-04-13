@@ -144,8 +144,20 @@ MERGE_STATUS=$?
 if [ $MERGE_STATUS -eq 0 ]; then
   echo "✓ Merged $BRANCH to $WORKING_BRANCH"
 
-  # Push to origin
-  git push origin "$WORKING_BRANCH" 2>/dev/null || echo "⚠ Push failed - run manually: git push origin $WORKING_BRANCH"
+  # Push to origin with retry
+  push_success=false
+  for attempt in 1 2 3; do
+    if git push origin "$WORKING_BRANCH" 2>/dev/null; then
+      push_success=true
+      break
+    fi
+    echo "⚠ Push attempt $attempt failed, retrying in ${attempt}s..."
+    sleep "$attempt"
+  done
+  if [ "$push_success" = false ]; then
+    echo "✗ PUSH FAILED after 3 attempts — $WORKING_BRANCH has unpushed commits"
+    echo "  Fix: git push origin $WORKING_BRANCH"
+  fi
 
   # Remove worktree if it exists (NEVER remove the main repo)
   MAIN_TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
@@ -256,8 +268,20 @@ else
 
     echo "✓ Merged $BRANCH to $WORKING_BRANCH (with auto-resolution)"
 
-    # Push to origin
-    git push origin "$WORKING_BRANCH" 2>/dev/null || echo "⚠ Push failed - run manually: git push origin $WORKING_BRANCH"
+    # Push to origin with retry
+    push_success=false
+    for attempt in 1 2 3; do
+      if git push origin "$WORKING_BRANCH" 2>/dev/null; then
+        push_success=true
+        break
+      fi
+      echo "⚠ Push attempt $attempt failed, retrying in ${attempt}s..."
+      sleep "$attempt"
+    done
+    if [ "$push_success" = false ]; then
+      echo "✗ PUSH FAILED after 3 attempts — $WORKING_BRANCH has unpushed commits"
+      echo "  Fix: git push origin $WORKING_BRANCH"
+    fi
 
     # Remove worktree if it exists (NEVER remove the main repo)
     MAIN_TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)

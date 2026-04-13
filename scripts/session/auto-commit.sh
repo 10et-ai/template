@@ -73,9 +73,19 @@ do_commit() {
     git add $paths
     git commit -m "$MSG" || return 0
 
-    # Push after commit to current branch
+    # Push after commit to current branch with retry
     local current_branch=$(git branch --show-current)
-    git push origin "$current_branch" 2>/dev/null || echo "[$(date '+%H:%M:%S')] Push failed - will retry"
+    local pushed=false
+    for attempt in 1 2; do
+        if git push origin "$current_branch" 2>/dev/null; then
+            pushed=true
+            break
+        fi
+        sleep "$attempt"
+    done
+    if [ "$pushed" = false ]; then
+        echo "[$(date '+%H:%M:%S')] Push failed after 2 attempts - will retry next cycle"
+    fi
 
     echo "[$(date '+%H:%M:%S')] Committed: $MSG"
 }

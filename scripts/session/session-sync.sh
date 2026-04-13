@@ -78,6 +78,18 @@ sync_repo() {
 
             if [ "$AHEAD" -gt 0 ]; then
                 echo -e "${YELLOW}$repo_name is $AHEAD commits ahead (unpushed)${NC}"
+                # Auto-push if no uncommitted changes
+                if [ -z "$(git status --porcelain)" ]; then
+                    echo "Pushing $AHEAD commits to origin/$CURRENT_BRANCH..."
+                    git push origin "$CURRENT_BRANCH" 2>/dev/null && {
+                        echo -e "${GREEN}Pushed successfully${NC}"
+                    } || {
+                        echo -e "${RED}Push failed - check credentials or network${NC}"
+                        FAILURES=$((FAILURES + 1))
+                    }
+                else
+                    echo -e "${YELLOW}Has uncommitted changes - commit first, then push${NC}"
+                fi
             fi
         else
             echo -e "${GREEN}$repo_name is up to date${NC}"
@@ -180,12 +192,21 @@ if [ -f "$CONFIG_FILE" ] && command -v jq >/dev/null 2>&1; then
                 DIRTY_SERVICES="$DIRTY_SERVICES\n  ${YELLOW}!${NC} $svc_name: $dirty_files uncommitted file(s)"
             fi
 
-            # Check for unpushed commits
+            # Check for unpushed commits and auto-push if clean
             branch=$(git branch --show-current 2>/dev/null)
             if [ -n "$branch" ]; then
                 ahead=$(git rev-list --count "origin/$branch"..HEAD 2>/dev/null || echo "0")
                 if [ "$ahead" -gt 0 ]; then
-                    UNPUSHED_SERVICES="$UNPUSHED_SERVICES\n  ${YELLOW}↑${NC} $svc_name: $ahead unpushed commit(s) on $branch"
+                    if [ -z "$(git status --porcelain 2>/dev/null)" ]; then
+                        # Clean working tree — auto-push
+                        if git push origin "$branch" 2>/dev/null; then
+                            UNPUSHED_SERVICES="$UNPUSHED_SERVICES\n  ${GREEN}✓${NC} $svc_name: pushed $ahead commit(s) on $branch"
+                        else
+                            UNPUSHED_SERVICES="$UNPUSHED_SERVICES\n  ${RED}✗${NC} $svc_name: push failed ($ahead commit(s) on $branch)"
+                        fi
+                    else
+                        UNPUSHED_SERVICES="$UNPUSHED_SERVICES\n  ${YELLOW}↑${NC} $svc_name: $ahead unpushed commit(s) on $branch (has dirty files)"
+                    fi
                 fi
             fi
 
