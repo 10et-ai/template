@@ -154,6 +154,54 @@ echo "--- Syncing submodules ---"
 cd "$GTM_ROOT"
 git submodule update --init --recursive 2>/dev/null || true
 
+# Check registered services for unpushed/dirty state
+CONFIG_FILE="$GTM_ROOT/.tenet/config.json"
+if [ -f "$CONFIG_FILE" ] && command -v jq >/dev/null 2>&1; then
+    SERVICE_COUNT=$(jq -r '.registered_services | length // 0' "$CONFIG_FILE" 2>/dev/null || echo "0")
+    if [ "$SERVICE_COUNT" -gt 0 ]; then
+        echo ""
+        echo "--- Checking registered services ---"
+        DIRTY_SERVICES=""
+        UNPUSHED_SERVICES=""
+
+        for i in $(seq 0 $((SERVICE_COUNT - 1))); do
+            svc_name=$(jq -r ".registered_services[$i].name" "$CONFIG_FILE" 2>/dev/null)
+            svc_path=$(jq -r ".registered_services[$i].path" "$CONFIG_FILE" 2>/dev/null)
+
+            if [ -z "$svc_path" ] || [ "$svc_path" = "null" ] || [ ! -d "$svc_path/.git" ]; then
+                continue
+            fi
+
+            cd "$svc_path" 2>/dev/null || continue
+
+            # Check for uncommitted changes
+            if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+                dirty_files=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+                DIRTY_SERVICES="$DIRTY_SERVICES\n  ${YELLOW}!${NC} $svc_name: $dirty_files uncommitted file(s)"
+            fi
+
+            # Check for unpushed commits
+            branch=$(git branch --show-current 2>/dev/null)
+            if [ -n "$branch" ]; then
+                ahead=$(git rev-list --count "origin/$branch"..HEAD 2>/dev/null || echo "0")
+                if [ "$ahead" -gt 0 ]; then
+                    UNPUSHED_SERVICES="$UNPUSHED_SERVICES\n  ${YELLOW}↑${NC} $svc_name: $ahead unpushed commit(s) on $branch"
+                fi
+            fi
+
+            cd "$GTM_ROOT"
+        done
+
+        if [ -n "$DIRTY_SERVICES" ] || [ -n "$UNPUSHED_SERVICES" ]; then
+            echo -e "${YELLOW}Service status:${NC}"
+            [ -n "$DIRTY_SERVICES" ] && echo -e "$DIRTY_SERVICES"
+            [ -n "$UNPUSHED_SERVICES" ] && echo -e "$UNPUSHED_SERVICES"
+        else
+            echo -e "${GREEN}All registered services clean${NC}"
+        fi
+    fi
+fi
+
 # Final status
 echo ""
 echo "========================================"
