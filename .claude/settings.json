@@ -12,6 +12,10 @@
                         "type": "command",
                         "command": "PORT=$(jq -r \".contextHub.port // empty\" .tenet/config.json 2>/dev/null || jq -r \".contextHub.port // empty\" .jfl/config.json 2>/dev/null); if [ -z \"$PORT\" ]; then PORT=4200; fi; curl -sf http://localhost:$PORT/health >/dev/null 2>&1 || tenet context-hub ensure --port $PORT >> .tenet/logs/context-hub.log 2>&1 || tenet context-hub ensure --port $PORT >> .jfl/logs/context-hub.log 2>&1; true",
                         "async": true
+                    },
+                    {
+                        "type": "command",
+                        "command": "echo ''; echo '==============================================================='; echo 'SESSION START [SSF-001] -- pull context before responding'; echo '==============================================================='; echo 'Claude Code: call these tools NOW (before turn 1):'; echo '  1. ToolSearch({ query: \"tenet-context\", max_results: 30 })'; echo '  2. mcp__tenet-context__context_get'; echo '  3. mcp__tenet-context__memory_search  (topic at hand)'; echo '  4. mcp__tenet-context__kanban_ls       (see in-progress)'; echo 'Pi: tools auto-load -- call tenet_context() and tenet_memory_search().'; echo '==============================================================='"
                     }
                 ]
             }
