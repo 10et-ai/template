@@ -103,6 +103,25 @@ grep -c 'POST-COMPACT \[SSF-004\]' .claude/settings.json   # expect: 1
 
 ---
 
+## SSF-006: CI gate
+
+**Problem:** SSF-005 suite is only useful if it runs. Manual `bash scripts/verify-startup-fixes.sh`
+is forgotten. Need it to fire automatically on every PR.
+
+**Fix:** `.github/workflows/ssf-regression.yml` — single bash step, ~30s total runtime.
+Triggers on changes to `.claude/settings.json`, `CLAUDE.md`, `AGENTS.md`,
+`scripts/session/**`, the suite itself, or this index.
+
+**Files:**
+- `.github/workflows/ssf-regression.yml`
+
+**Negative-test verified:** corrupted SSF-002 marker → suite exits 1 → CI blocks.
+Restored marker → suite exits 0 → CI green.
+
+**No secrets, no node, no install** beyond `jq` (apt). Self-contained, fast, hard to break.
+
+---
+
 ## SSF-005: Automated regression suite
 
 **Problem:** SSF-001/002/003/004 fixes are easy to drift back: someone edits hooks,
