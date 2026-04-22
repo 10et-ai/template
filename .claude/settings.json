@@ -69,6 +69,15 @@
                         "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '==============================================================='; echo 'JOURNAL CHECK: User approved/confirmed something'; echo '==============================================================='; echo 'If a decision or feature was just approved, write journal entry.'; echo 'File: .tenet/journal/'\"${BRANCH}\"'.jsonl'; echo '==============================================================='"
                     }
                 ]
+            },
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); MARKER=\"/tmp/tenet-post-compact-${BRANCH}\"; if [ -f \"$MARKER\" ]; then echo ''; echo '==============================================================='; echo 'POST-COMPACT [SSF-004] -- rehydrate before responding'; echo '==============================================================='; echo 'Context was compacted. Re-pull state NOW:'; echo '  Claude Code: mcp__tenet-context__context_get + memory_search'; echo '  Pi: tenet_context() + tenet_memory_search()'; echo \"  Read latest journal: .tenet/journal/${BRANCH}.jsonl\"; echo '==============================================================='; rm -f \"$MARKER\"; fi"
+                    }
+                ]
             }
         ],
         "Stop": [
@@ -103,6 +112,10 @@
                     {
                         "type": "command",
                         "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".tenet/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo ''; echo 'CONTEXT COMPACTING - WRITE JOURNAL NOW'; echo \"File: .tenet/journal/${BRANCH}.jsonl\"; fi"
+                    },
+                    {
+                        "type": "command",
+                        "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); touch \"/tmp/tenet-post-compact-${BRANCH}\" 2>/dev/null; exit 0"
                     },
                     {
                         "type": "command",

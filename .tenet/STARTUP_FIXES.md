@@ -67,6 +67,42 @@ grep -c 'SSF-002' CLAUDE.md             # expect: 1
 
 ---
 
+## SSF-004: Post-compact rehydrate
+
+**Problem:** When Claude Code compacts context mid-session, the agent loses in-memory
+state. The `PreCompact` hook saves to journal/git, but there is no `PostCompact` event
+in Claude Code — the agent resumes and has no imperative to re-pull from the hub.
+Result: `#2940` — sessions "forget" what they were doing after compaction.
+
+**Fix:** Two-part marker pattern (no new hook type needed):
+1. `PreCompact` hook `touch`es `/tmp/tenet-post-compact-${BRANCH}` before compaction
+2. `UserPromptSubmit` hook (catch-all matcher="") checks for that marker on every prompt;
+   if present, echoes a rehydrate banner telling the agent to call `context_get` +
+   `memory_search` + read the session journal. Then `rm`s the marker so the banner
+   only fires once per compaction.
+
+**Files:**
+- `.claude/settings.json` — adds 1 command to `PreCompact` hooks, adds 1 new
+  `UserPromptSubmit` entry (matcher="", catch-all)
+
+**Tests (grep-level):**
+```bash
+# marker-touch in PreCompact
+grep -c 'tenet-post-compact' .claude/settings.json   # expect: at least 2 (PreCompact touches, UserPromptSubmit checks/removes)
+
+# banner in UserPromptSubmit
+grep -c 'POST-COMPACT \[SSF-004\]' .claude/settings.json   # expect: 1
+```
+
+**Runtime test (manual):**
+1. Start a Claude Code session, let it accrue context until compaction triggers (or force with `/compact`)
+2. After compaction, submit ANY next prompt
+3. Expect the `POST-COMPACT [SSF-004]` banner in output
+4. Expect agent's first tool call = `context_get` or journal read
+5. Marker file `/tmp/tenet-post-compact-${BRANCH}` should be absent after the prompt
+
+---
+
 ## SSF-003: This index
 
 **Purpose:** makes drift detectable. Each fix has a marker future greps can verify.
