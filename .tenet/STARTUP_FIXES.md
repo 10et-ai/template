@@ -103,6 +103,42 @@ grep -c 'POST-COMPACT \[SSF-004\]' .claude/settings.json   # expect: 1
 
 ---
 
+## SSF-005: Automated regression suite
+
+**Problem:** SSF-001/002/003/004 fixes are easy to drift back: someone edits hooks,
+deletes a marker comment, or rewrites CLAUDE.md and the regressions are silent.
+Manual greps are not enforced.
+
+**Fix:** `scripts/verify-startup-fixes.sh` — bash test runner with per-fix assertions.
+Static mode runs free; `--live` mode spawns a real `claude --print` session and
+verifies the SSF-001 banner reaches a sibling agent's hook_response stream.
+
+**Files:**
+- `scripts/verify-startup-fixes.sh` — assertion runner
+
+**How to use:**
+```bash
+# fast — static checks only
+bash scripts/verify-startup-fixes.sh
+
+# full — also spawns a real claude session (~1¢)
+bash scripts/verify-startup-fixes.sh --live
+```
+
+**Wire into CI** (recommended next step):
+```yaml
+- name: SSF regression
+  run: bash scripts/verify-startup-fixes.sh
+```
+
+**Tests:**
+```bash
+bash scripts/verify-startup-fixes.sh         # PASS=23 FAIL=0 (current)
+bash scripts/verify-startup-fixes.sh --live  # PASS=24 FAIL=0 if claude CLI present
+```
+
+---
+
 ## SSF-003: This index
 
 **Purpose:** makes drift detectable. Each fix has a marker future greps can verify.
