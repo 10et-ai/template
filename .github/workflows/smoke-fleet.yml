@@ -1,0 +1,138 @@
+name: Smoke Fleet
+
+# Per-persona matrix run of the smoke-fleet against this workspace.
+# Each persona spawns a sibling claude --print session, captures stream-json,
+# scores via decomposed eval, fails CI if score < threshold.
+#
+# Personas live in agents/smoke-fleet/_workspace/ and eval in eval/smoke-fleet/_workspace/.
+# Add a new persona by adding two files; matrix auto-includes via workflow_dispatch input.
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '.claude/settings.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'agents/smoke-fleet/**'
+      - 'eval/smoke-fleet/**'
+      - 'scripts/smoke-fleet/**'
+      - '.github/workflows/smoke-fleet.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.claude/settings.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'agents/smoke-fleet/**'
+      - 'eval/smoke-fleet/**'
+      - 'scripts/smoke-fleet/**'
+      - '.github/workflows/smoke-fleet.yml'
+  schedule:
+    - cron: '0 */6 * * *'  # 4× per day — matches the cost model (~$3/day continuous)
+  workflow_dispatch:
+    inputs:
+      personas:
+        description: 'Personas to run (space-separated, default = all _workspace)'
+        required: false
+        default: 'prompt-injection-auditor startup-smoker compaction-smoker'
+
+permissions:
+  contents: read
+  pull-requests: write   # for posting summary comment
+
+jobs:
+  fleet:
+    name: persona/${{ matrix.persona }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false   # one persona failing must not stop others
+      matrix:
+        persona:
+          - prompt-injection-auditor
+          - startup-smoker
+          - compaction-smoker
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}   # OPTIONAL — falls back to claude OAuth if absent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y jq bc
+          # Install claude CLI (assumes a published install path; adjust per environment)
+          curl -fsSL https://anthropic.com/install/claude.sh | sh || echo "claude CLI install skipped — provide via runner image"
+          # Install npx + tsx for evals
+          npm install -g tsx typescript
+
+      - name: Verify SSF baseline (fast static check first)
+        run: bash scripts/verify-startup-fixes.sh
+
+      - name: Run persona — ${{ matrix.persona }}
+        id: persona
+        run: |
+          set +e
+          bash scripts/smoke-fleet/run-persona.sh _workspace ${{ matrix.persona }} "$(pwd)"
+          echo "exit=$?" >> $GITHUB_OUTPUT
+
+      - name: Capture transcript + report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-fleet-${{ matrix.persona }}-${{ github.run_id }}
+          path: |
+            /tmp/fleet-_workspace-${{ matrix.persona }}-*.jsonl
+            /tmp/fleet-_workspace-${{ matrix.persona }}-*.report.json
+          retention-days: 14
+
+      - name: Post-process — assert exit
+        run: |
+          if [ "${{ steps.persona.outputs.exit }}" != "0" ]; then
+            echo "::error title=Persona failed::${{ matrix.persona }} scored below threshold"
+            exit 1
+          fi
+
+  aggregate:
+    name: aggregate
+    needs: fleet
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: /tmp/artifacts
+      - name: Build composite report
+        run: |
+          set +e
+          sudo apt-get install -y jq -qq
+          PASSED=0
+          TOTAL=0
+          ROWS=""
+          for DIR in /tmp/artifacts/smoke-fleet-*/; do
+            REPORT=$(ls "$DIR"/*.report.json 2>/dev/null | head -1)
+            if [ -z "$REPORT" ]; then continue; fi
+            P=$(jq -r '.persona' "$REPORT")
+            S=$(jq -r '.score' "$REPORT")
+            T=$(jq -r '.threshold' "$REPORT")
+            STATUS=$(awk "BEGIN{print ($S>=$T)?\"PASS\":\"FAIL\"}")
+            [ "$STATUS" = "PASS" ] && PASSED=$((PASSED+1))
+            TOTAL=$((TOTAL+1))
+            ROWS="${ROWS}| $P | $STATUS | $S | $T |"$'\n'
+          done
+          echo "## Smoke Fleet — Composite $PASSED/$TOTAL" > /tmp/summary.md
+          echo "" >> /tmp/summary.md
+          echo "| Persona | Status | Score | Threshold |" >> /tmp/summary.md
+          echo "|---|---|---|---|" >> /tmp/summary.md
+          echo -e "$ROWS" >> /tmp/summary.md
+          cat /tmp/summary.md >> $GITHUB_STEP_SUMMARY
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: smoke-fleet
+          path: /tmp/summary.md
