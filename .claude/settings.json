@@ -12,6 +12,10 @@
                         "type": "command",
                         "command": "PORT=$(jq -r \".contextHub.port // empty\" .tenet/config.json 2>/dev/null || jq -r \".contextHub.port // empty\" .jfl/config.json 2>/dev/null); if [ -z \"$PORT\" ]; then PORT=4200; fi; curl -sf http://localhost:$PORT/health >/dev/null 2>&1 || tenet context-hub ensure --port $PORT >> .tenet/logs/context-hub.log 2>&1 || tenet context-hub ensure --port $PORT >> .jfl/logs/context-hub.log 2>&1; true",
                         "async": true
+                    },
+                    {
+                        "type": "command",
+                        "command": "echo ''; echo '==============================================================='; echo 'SESSION START [SSF-001] -- pull context before responding'; echo '==============================================================='; echo 'Claude Code: call these tools NOW (before turn 1):'; echo '  1. ToolSearch({ query: \"tenet-context\", max_results: 30 })'; echo '  2. mcp__tenet-context__context_get'; echo '  3. mcp__tenet-context__memory_search  (topic at hand)'; echo '  4. mcp__tenet-context__kanban_ls       (see in-progress)'; echo 'Pi: tools auto-load -- call tenet_context() and tenet_memory_search().'; echo '==============================================================='"
                     }
                 ]
             }
@@ -65,6 +69,15 @@
                         "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); echo ''; echo '==============================================================='; echo 'JOURNAL CHECK: User approved/confirmed something'; echo '==============================================================='; echo 'If a decision or feature was just approved, write journal entry.'; echo 'File: .tenet/journal/'\"${BRANCH}\"'.jsonl'; echo '==============================================================='"
                     }
                 ]
+            },
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); MARKER=\"/tmp/tenet-post-compact-${BRANCH}\"; if [ -f \"$MARKER\" ]; then echo ''; echo '==============================================================='; echo 'POST-COMPACT [SSF-004] -- rehydrate before responding'; echo '==============================================================='; echo 'Context was compacted. Re-pull state NOW:'; echo '  Claude Code: mcp__tenet-context__context_get + memory_search'; echo '  Pi: tenet_context() + tenet_memory_search()'; echo \"  Read latest journal: .tenet/journal/${BRANCH}.jsonl\"; echo '==============================================================='; rm -f \"$MARKER\"; fi"
+                    }
+                ]
             }
         ],
         "Stop": [
@@ -99,6 +112,10 @@
                     {
                         "type": "command",
                         "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); JOURNAL=\".tenet/journal/${BRANCH}.jsonl\"; if [ ! -s \"$JOURNAL\" ] 2>/dev/null; then echo ''; echo 'CONTEXT COMPACTING - WRITE JOURNAL NOW'; echo \"File: .tenet/journal/${BRANCH}.jsonl\"; fi"
+                    },
+                    {
+                        "type": "command",
+                        "command": "BRANCH=$(cat .tenet/current-session-branch.txt 2>/dev/null || git branch --show-current); touch \"/tmp/tenet-post-compact-${BRANCH}\" 2>/dev/null; exit 0"
                     },
                     {
                         "type": "command",

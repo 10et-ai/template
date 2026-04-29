@@ -1,14 +1,21 @@
 # TENET Workspace — Claude Code Instructions
 
-You are operating inside a TENET workspace. **First read `AGENTS.md`** in this directory for the full protocol (Pi runtime, journaling, skills, kanban, memory, build agents). This file is the Claude Code wrapper; `AGENTS.md` is the canonical source.
+<!-- SSF-002: self-contained, no cross-reference to AGENTS.md -->
+
+You are operating inside a TENET workspace. This file is authoritative for Claude Code sessions. (`AGENTS.md` is the Pi runtime protocol — Pi auto-loads it via APPEND_SYSTEM; Claude Code does not need to read it.)
 
 ## Quick Reference
 
-**Start of every session:**
-1. `tenet_context` → get project state, recent journals, team activity
-2. `tenet_memory_search` → find past decisions before making new ones
-3. Read `AGENTS.md` → load the runtime protocol
-4. `tenet hud` (bash) or `tenet_hud` (tool) → show current dashboard
+**Start of every session (Claude Code — MCP):**
+1. `ToolSearch({ query: "tenet-context", max_results: 30 })` — load all schemas
+2. `mcp__tenet-context__context_get` → project state, journals, team activity
+3. `mcp__tenet-context__memory_search` → past decisions before new ones
+4. `mcp__tenet-context__kanban_ls` → see what is in-progress
+
+**Start of every session (Pi — extensions auto-loaded):**
+1. `tenet_context` → project state, journals, team activity
+2. `tenet_memory_search` → past decisions before new ones
+3. `tenet hud` → current dashboard
 
 **As you work:**
 - `tenet_journal_write` after every significant action — type: `feature | decision | fix | discovery | milestone`

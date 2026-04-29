@@ -1,0 +1,42 @@
+name: SSF Regression (session-startup parity)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - '.claude/settings.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'scripts/session/**'
+      - 'scripts/verify-startup-fixes.sh'
+      - '.tenet/STARTUP_FIXES.md'
+      - '.github/workflows/ssf-regression.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.claude/settings.json'
+      - 'CLAUDE.md'
+      - 'AGENTS.md'
+      - 'scripts/session/**'
+      - 'scripts/verify-startup-fixes.sh'
+      - '.tenet/STARTUP_FIXES.md'
+  workflow_dispatch:
+
+jobs:
+  ssf:
+    name: Verify SSF-001 through SSF-005
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq (for JSON checks)
+        run: sudo apt-get update -qq && sudo apt-get install -y jq
+
+      - name: Run SSF regression suite (static)
+        run: bash scripts/verify-startup-fixes.sh
+
+      - name: Print STARTUP_FIXES.md for failure context
+        if: failure()
+        run: cat .tenet/STARTUP_FIXES.md
